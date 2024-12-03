@@ -1,14 +1,16 @@
 package com.sbboakye.engine.domain
 
-import com.sbboakye.engine.domain.CustomTypes.{ExecutionId, PipelineId}
+import com.sbboakye.engine.domain.CustomTypes.ExecutionId
 
 import java.time.OffsetDateTime
 
 case class Execution(
     id: ExecutionId,
-    pipelineId: PipelineId,
+    pipeline: Pipeline,
     startTime: OffsetDateTime,
     endTime: Option[OffsetDateTime],
     status: ExecutionStatus,
-    logs: List[ExecutionLog]
+    logs: List[ExecutionLog],
+    createdAt: OffsetDateTime,
+    updatedAt: OffsetDateTime
 )

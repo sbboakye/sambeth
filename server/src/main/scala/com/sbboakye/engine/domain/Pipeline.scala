@@ -10,7 +10,7 @@ case class Pipeline(
     description: Option[String],
     stages: List[Stage],
     schedule: Option[Schedule],
+    status: PipelineStatus,
     createdAt: OffsetDateTime,
-    updatedAt: OffsetDateTime,
-    status: PipelineStatus
+    updatedAt: OffsetDateTime
 )

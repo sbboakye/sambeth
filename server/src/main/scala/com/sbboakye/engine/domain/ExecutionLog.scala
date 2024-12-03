@@ -1,12 +1,14 @@
 package com.sbboakye.engine.domain
 
-import com.sbboakye.engine.domain.CustomTypes.StageId
+import com.sbboakye.engine.domain.CustomTypes.{ExecutionLogId, StageId}
 
 import java.time.OffsetDateTime
 
 case class ExecutionLog(
-    stageId: StageId,
+    id: ExecutionLogId,
+    stage: Stage,
     timestamp: OffsetDateTime,
     message: String,
-    logLevel: LogLevel
+    logLevel: LogLevel,
+    createdAt: OffsetDateTime
 )
