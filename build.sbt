@@ -22,6 +22,7 @@ lazy val root = (project in file("server"))
       "org.tpolecat"          %% "doobie-core"               % "1.0.0-RC6",
       "org.tpolecat"          %% "doobie-hikari"             % doobieVersion,
       "org.tpolecat"          %% "doobie-postgres"           % doobieVersion,
+      "org.tpolecat"          %% "doobie-postgres-circe"     % doobieVersion,
       "org.tpolecat"          %% "doobie-specs2"             % doobieVersion    % "test",
       "org.tpolecat"          %% "doobie-scalatest"          % doobieVersion    % "test",
       "io.circe"              %% "circe-core"                % circeVersion,
