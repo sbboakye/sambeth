@@ -1,5 +1,7 @@
 package com.sbboakye.engine.config
 
+import pureconfig.ConfigReader
+
 case class DBConfig(
     nThreads: Int,
     driver: String,
@@ -8,4 +10,4 @@ case class DBConfig(
     database: String,
     user: String,
     password: String
-)
+) derives ConfigReader
