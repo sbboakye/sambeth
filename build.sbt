@@ -20,6 +20,7 @@ lazy val root = (project in file("server"))
       "ch.qos.logback"         % "logback-classic"           % "1.5.12",
       "com.github.pureconfig" %% "pureconfig-generic-scala3" % "0.17.8",
       "org.tpolecat"          %% "doobie-core"               % "1.0.0-RC6",
+      "com.cronutils"          % "cron-utils"                % "9.2.1",
       "org.tpolecat"          %% "doobie-hikari"             % doobieVersion,
       "org.tpolecat"          %% "doobie-postgres"           % doobieVersion,
       "org.tpolecat"          %% "doobie-postgres-circe"     % doobieVersion,

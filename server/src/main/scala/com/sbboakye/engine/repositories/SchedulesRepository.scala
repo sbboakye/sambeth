@@ -2,6 +2,7 @@ package com.sbboakye.engine.repositories
 
 import cats.*
 import cats.effect.*
+import cats.implicits.*
 import com.sbboakye.engine.core.Core
 import com.sbboakye.engine.domain.Schedule
 import doobie.*
@@ -19,52 +20,51 @@ class SchedulesRepository[F[_]: MonadCancelThrow: Logger] private (xa: Transacto
   private val select: Fragment =
     fr"SELECT id, cron_expression, timezone, created_at, updated_at FROM schedules"
 
-  private def where(id: UUID): Fragment = fr"WHERE id = $id"
+  private inline def where(id: UUID): Fragment = fr"WHERE id = $id"
 
-  override def findAll: F[Seq[Schedule]] =
-    select
-      .query[Schedule]
-      .to[Seq]
-      .transact(xa)
+  private def runQuery[A](query: ConnectionIO[A]): F[A] =
+    query.transact(xa)
+
+  override def findAll(offset: Int, limit: Int): F[Seq[Schedule]] =
+    Logger[F].info(s"Fetching all schedules with offset: $offset, limit: $limit") *>
+      runQuery((select ++ fr"LIMIT $limit OFFSET $offset").query[Schedule].to[Seq])
 
   override def findByID(id: UUID): F[Option[Schedule]] =
-    val fullQuery = select ++ where(id)
-    fullQuery
-      .query[Schedule]
-      .option
-      .transact(xa)
+    Logger[F].info(s"Fetching schedule with id: $id") *>
+      runQuery((select ++ where(id)).query[Schedule].option)
 
-  override def create(a: Schedule): F[UUID] =
-    sql"""INSERT INTO schedules (cron_expression, timezone)
-         VALUES (${a.cronExpression}, ${a.timezone})
+  override def create(schedule: Schedule): F[UUID] =
+    Logger[F].info(s"Creating a schedule with: $schedule") *>
+      runQuery(
+        sql"""INSERT INTO schedules (cron_expression, timezone)
+         VALUES (${schedule.cronExpression}, ${schedule.timezone})
        """.update
-      .withUniqueGeneratedKeys[UUID]("id")
-      .transact(xa)
+          .withUniqueGeneratedKeys[UUID]("id")
+      )
 
-  override def update(id: UUID, a: Schedule): F[Option[Int]] =
-    val update         = fr"UPDATE schedules"
-    val cronExpression = fr"cron_expression = ${a.cronExpression}"
-    val timezone       = fr"timezone = ${a.timezone}"
-    val setter         = fr"SET " ++ cronExpression ++ fr", " ++ timezone
-
-    val fullQuery = update ++ setter ++ where(id)
-    fullQuery.update.run
-      .map {
-        case 0 => None
-        case n => Some(n)
-      }
-      .transact(xa)
+  override def update(id: UUID, schedule: Schedule): F[Option[Int]] =
+    Logger[F].info(s"Updating schedule $id with: $schedule") *>
+      runQuery(
+        (sql"""
+         UPDATE schedules
+         SET cron_expression = ${schedule.cronExpression},
+             timezone = ${schedule.timezone}
+       """ ++ where(id)).update.run
+          .map {
+            case 0 => None
+            case n => Some(n)
+          }
+      )
 
   override def delete(id: UUID): F[Option[Int]] =
-    val delete    = fr"DELETE FROM schedules"
-    val fullQuery = delete ++ where(id)
-
-    fullQuery.update.run
-      .map {
-        case 0 => None
-        case n => Some(n)
-      }
-      .transact(xa)
+    Logger[F].info(s"Deleting schedule $id") *>
+      runQuery(
+        (sql"DELETE FROM schedules" ++ where(id)).update.run
+          .map {
+            case 0 => None
+            case n => Some(n)
+          }
+      )
 
 object SchedulesRepository:
   def apply[F[_]: MonadCancelThrow: Logger](xa: Transactor[F])(using
