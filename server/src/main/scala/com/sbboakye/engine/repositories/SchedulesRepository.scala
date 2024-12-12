@@ -11,27 +11,29 @@ import doobie.postgres.*
 import doobie.postgres.implicits.*
 import org.typelevel.log4cats.Logger
 
-import java.time.OffsetDateTime
 import java.util.UUID
 
-class SchedulesRepository[F[_]: MonadCancelThrow: Logger] private (xa: Transactor[F])
+class SchedulesRepository[F[_]: MonadCancelThrow: Logger] private (using xa: Transactor[F])
     extends Core[F, Schedule]:
 
-  private val select: Fragment =
+  override val select =
     fr"SELECT id, cron_expression, timezone, created_at, updated_at FROM schedules"
-
-  private inline def where(id: UUID): Fragment = fr"WHERE id = $id"
-
-  private def runQuery[A](query: ConnectionIO[A]): F[A] =
-    query.transact(xa)
 
   override def findAll(offset: Int, limit: Int): F[Seq[Schedule]] =
     Logger[F].info(s"Fetching all schedules with offset: $offset, limit: $limit") *>
-      runQuery((select ++ fr"LIMIT $limit OFFSET $offset").query[Schedule].to[Seq])
+      runQuery(
+        (select ++ fr"LIMIT $limit OFFSET $offset")
+          .query[Schedule]
+          .to[Seq]
+      )
 
   override def findByID(id: UUID): F[Option[Schedule]] =
     Logger[F].info(s"Fetching schedule with id: $id") *>
-      runQuery((select ++ where(id)).query[Schedule].option)
+      runQuery(
+        (select ++ where(id))
+          .query[Schedule]
+          .option
+      )
 
   override def create(schedule: Schedule): F[UUID] =
     Logger[F].info(s"Creating a schedule with: $schedule") *>
@@ -67,7 +69,7 @@ class SchedulesRepository[F[_]: MonadCancelThrow: Logger] private (xa: Transacto
       )
 
 object SchedulesRepository:
-  def apply[F[_]: MonadCancelThrow: Logger](xa: Transactor[F])(using
-      F: Async[F]
+  def apply[F[_]: Async: Logger](using
+      xa: Transactor[F]
   ): Resource[F, Core[F, Schedule]] =
-    Resource.eval(F.pure(new SchedulesRepository[F](xa)))
+    Resource.eval(Async[F].pure(new SchedulesRepository[F]))
