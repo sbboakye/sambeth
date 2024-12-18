@@ -2,14 +2,9 @@ package com.sbboakye.engine.repositories.schedule
 
 import cats.*
 import cats.effect.*
-import cats.implicits.*
 import com.sbboakye.engine.domain.Schedule
 import com.sbboakye.engine.repositories.core.Core
-import com.sbboakye.engine.repositories.schedule.ScheduleQueries.{select, where}
 import doobie.*
-import doobie.implicits.*
-import doobie.postgres.*
-import doobie.postgres.implicits.*
 import org.typelevel.log4cats.Logger
 
 import java.util.UUID

@@ -2,7 +2,7 @@ package com.sbboakye.engine.domain
 
 import cats.syntax.all.*
 import cats.data.{NonEmptyChain, ValidatedNec}
-import cats.data.Validated.{Invalid, Valid}
+import cats.data.Validated
 import com.sbboakye.engine.domain.CustomTypes.ScheduleId
 import com.cronutils.model.CronType
 import com.cronutils.model.definition.CronDefinitionBuilder
@@ -22,7 +22,7 @@ case class Schedule(
 object Schedule:
   private type ValidationResult[A] = ValidatedNec[DomainValidation, A]
 
-  private def validateCronExpression(cronExpression: String): ValidationResult[String] =
+  def validateCronExpression(cronExpression: String): ValidationResult[String] =
     val cronDefinition = CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ)
     val cronParser     = new CronParser(cronDefinition)
 
@@ -32,13 +32,13 @@ object Schedule:
       cronExpression.validNec
     catch case e: Exception => InvalidCronExpression.invalidNec
 
-  private def validateTimezone(timezone: String): ValidationResult[String] =
+  def validateTimezone(timezone: String): ValidationResult[String] =
     try
       ZoneId.of(timezone)
       timezone.validNec
     catch case e: Exception => InvalidTimezone.invalidNec
 
-  private def validateSchedulerFields(
+  def validateSchedulerFields(
       cronExpression: String,
       timezone: String
   ): ValidationResult[(String, String)] = {
