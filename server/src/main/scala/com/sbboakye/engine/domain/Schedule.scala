@@ -12,11 +12,11 @@ import java.time.{OffsetDateTime, ZoneId}
 import java.util.UUID
 
 case class Schedule(
-    id: ScheduleId = UUID.randomUUID(),
+    id: ScheduleId,
     cronExpression: String,
     timezone: String,
-    createdAt: OffsetDateTime = OffsetDateTime.now(),
-    updatedAt: OffsetDateTime = OffsetDateTime.now()
+    createdAt: OffsetDateTime,
+    updatedAt: OffsetDateTime
 )
 
 object Schedule:
@@ -54,5 +54,11 @@ object Schedule:
     val validationResult = validateSchedulerFields(cronExpression, timezone).toEither
     validationResult match
       case Right((cronExpression, timezone)) =>
-        Schedule(cronExpression = cronExpression, timezone = timezone).asRight
+        Schedule(
+          id = UUID.randomUUID(),
+          cronExpression = cronExpression,
+          timezone = timezone,
+          createdAt = OffsetDateTime.MAX,
+          updatedAt = OffsetDateTime.MAX
+        ).asRight
       case Left(e) => e.asLeft

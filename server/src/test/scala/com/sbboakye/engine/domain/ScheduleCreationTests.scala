@@ -1,42 +1,66 @@
 package com.sbboakye.engine.domain
 
+import com.sbboakye.engine.fixtures.ScheduleFixture
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 
-class ScheduleCreationTests extends AnyFreeSpec with Matchers {
+class ScheduleCreationTests extends AnyFreeSpec with Matchers with ScheduleFixture {
 
   "Schedule creation logic" - {
     "create" - {
-      "should return a Schedule instance for valid inputs" in {
-        val validCron     = "0 0 12 * * ?"
-        val validTimezone = "UTC"
-        val result        = Schedule.create(validCron, validTimezone)
-
+      "should return a Right(Schedule) for valid inputs" in {
+        val result = createValidSchedule
         result.isRight shouldBe true
       }
 
-      "should return an error for invalid cron expression" in {
-        val invalidCron   = "0 0 12 * *"
-        val validTimezone = "UTC"
-        val result        = Schedule.create(invalidCron, validTimezone)
+      "should return a Schedule instance with the same valid cron expression used in its creation" in {
+        val result = createValidSchedule
+        result.foreach { schedule =>
+          schedule.cronExpression shouldBe validCronExpression
+        }
+      }
 
+      "should return a Schedule instance with the same valid timezone used in its creation" in {
+        val result = createValidSchedule
+        result.map { schedule =>
+          schedule.timezone shouldBe validTimezone
+        }
+      }
+
+      "should return a Left for invalid cron expression" in {
+        val result = createInvalidScheduleWithOnlyTimezoneValid
         result.isLeft shouldBe true
       }
 
-      "should return an error for invalid timezone" in {
-        val validCron       = "0 0 12 * * ?"
-        val invalidTimezone = "UTT"
-        val result          = Schedule.create(validCron, invalidTimezone)
+      "should return a non-empty chain containing InvalidCronExpression DomainValidation for invalid cron expression" in {
+        val result = createInvalidScheduleWithOnlyTimezoneValid
+        result.left.foreach { errors =>
+          errors.contains(InvalidCronExpression) shouldBe true
+        }
+      }
 
+      "should return a Left for invalid timezone" in {
+        val result = createInvalidScheduleWithOnlyCronValid
         result.isLeft shouldBe true
       }
 
-      "should return an error for both invalid cron expression and timezone" in {
-        val invalidCron     = "0 0 12 * *"
-        val invalidTimezone = "UTT"
-        val result          = Schedule.create(invalidCron, invalidTimezone)
+      "should return a non-empty chain containing InvalidTimezone DomainValidation for invalid timezone" in {
+        val result = createInvalidScheduleWithOnlyCronValid
+        result.left.foreach { errors =>
+          errors.contains(InvalidTimezone) shouldBe true
+        }
+      }
 
+      "should return a Left for both invalid cron expression and timezone" in {
+        val result = createInvalidScheduleWithBothParametersInvalid
         result.isLeft shouldBe true
+      }
+
+      "should return a non-empty chain containing both InvalidCronExpression and InvalidTimezone DomainValidations when both parameters are invalid" in {
+        val result = createInvalidScheduleWithBothParametersInvalid
+        result.left.foreach { errors =>
+          errors.toNonEmptyList.toList.toSet.subsetOf(allValidationsSet) shouldBe true
+        }
       }
     }
   }
