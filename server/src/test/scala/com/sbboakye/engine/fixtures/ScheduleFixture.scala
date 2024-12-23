@@ -1,6 +1,5 @@
 package com.sbboakye.engine.fixtures
 
-import cats.syntax.all.*
 import cats.kernel.Eq
 import cats.data.NonEmptyChain
 import com.sbboakye.engine.domain.{
@@ -10,13 +9,19 @@ import com.sbboakye.engine.domain.{
   Schedule
 }
 
+import java.util.UUID
+
 trait ScheduleFixture:
   given Eq[DomainValidation] = Eq.fromUniversalEquals
 
-  val validCronExpression: String = "0 0 12 * * ?"
-  val validTimezone: String       = "UTC"
+  val validCronExpression: String       = "0 0 12 * * ?"
+  val validUpdateCronExpression: String = "0 0 11 * * ?"
+  val validTimezone: String             = "UTC"
   val createValidSchedule: Either[NonEmptyChain[DomainValidation], Schedule] =
     Schedule.create(validCronExpression, validTimezone)
+  val validSchedule: Schedule = createValidSchedule.toOption.get
+
+  val nonExistentScheduleId: UUID = UUID.randomUUID()
 
   val invalidCronExpression: String = "0 0 12 * *"
   val invalidTimezone: String       = "UTT"

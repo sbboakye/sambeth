@@ -27,5 +27,7 @@ object ScheduleQueries extends HasTableName:
   def update(id: UUID, schedule: Schedule): Fragment =
     fr"""UPDATE ${Fragment.const(tableName)}
            SET cron_expression = ${schedule.cronExpression},
-               timezone = ${schedule.timezone}
-           WHERE id = $id"""
+               timezone = ${schedule.timezone}""" ++ where(id)
+
+  def delete(id: UUID): Fragment =
+    fr"DELETE FROM ${Fragment.const(tableName)}" ++ where(id)

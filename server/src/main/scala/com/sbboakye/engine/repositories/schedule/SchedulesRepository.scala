@@ -16,12 +16,16 @@ class SchedulesRepository[F[_]: MonadCancelThrow: Logger] private (using
 
   def findAll(offset: Int, limit: Int): F[Seq[Schedule]] =
     core.findAll(ScheduleQueries.select, offset, limit)
+
   def findById(id: UUID): F[Option[Schedule]] =
     core.findByID(ScheduleQueries.select, ScheduleQueries.where(id))
+
   def create(schedule: Schedule): F[UUID] = core.create(ScheduleQueries.insert(schedule))
+
   def update(id: UUID, schedule: Schedule): F[Option[Int]] =
     core.update(ScheduleQueries.update(id, schedule))
-  def delete(id: UUID): F[Option[Int]] = core.delete(ScheduleQueries.where(id))
+
+  def delete(id: UUID): F[Option[Int]] = core.delete(ScheduleQueries.delete(id))
 
 object SchedulesRepository:
   def apply[F[_]: Async: Logger](using

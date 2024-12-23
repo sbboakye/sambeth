@@ -28,7 +28,7 @@ trait CoreSpec:
 
   val coreSpecTransactor: Resource[IO, Transactor[IO]] = for {
     db <- postgres
-    ce <- ExecutionContexts.fixedThreadPool[IO](1)
+    ce <- ExecutionContexts.fixedThreadPool[IO](32)
     xa <- HikariTransactor.newHikariTransactor[IO](
       "org.postgresql.Driver",
       db.jdbcUrl,
