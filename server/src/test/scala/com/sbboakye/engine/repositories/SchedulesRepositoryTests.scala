@@ -145,4 +145,35 @@ class SchedulesRepositoryTests
         }
       }
     }
+
+    "Transactional behaviour" - {
+      "should rollback on failure part 1" in {
+        val invalidSchedule = validSchedule.copy(cronExpression = null)
+        coreSpecTransactor.use { xa =>
+          given transactor: Transactor[IO] = xa
+          SchedulesRepository[IO].use { repo =>
+            val transactionalResult = (for {
+              _ <- repo.create(validSchedule)
+              _ <- repo.create(invalidSchedule)
+            } yield ()).attempt
+            transactionalResult.asserting(_.isLeft shouldBe true)
+          }
+        }
+      }
+
+      "should rollback on failure part 2" in {
+        val invalidSchedule = validSchedule.copy(cronExpression = null)
+        coreSpecTransactor.use { xa =>
+          given transactor: Transactor[IO] = xa
+          SchedulesRepository[IO].use { repo =>
+            val transactionalResult = (for {
+              _ <- repo.create(validSchedule)
+              _ <- repo.create(invalidSchedule)
+            } yield ()).attempt
+            val allSchedules = repo.findAll(0, 10)
+            allSchedules.asserting(_ shouldBe empty)
+          }
+        }
+      }
+    }
   }
