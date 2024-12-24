@@ -18,6 +18,7 @@ import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 import java.util.UUID
+import scala.io.Source
 
 class SchedulesRepositoryTests
     extends AsyncFreeSpec
@@ -26,11 +27,13 @@ class SchedulesRepositoryTests
     with CoreSpec
     with ScheduleFixture:
 
-  override val initSqlString: String = "sql/schedules.sql"
+  override val initSqlString: String = "sql/postgres.sql"
 
   given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
   given Core[IO, Schedule] with {}
-
+  //
+  // /Users/samuelboakye/Documents/scala-projects/sambeth/db/sql/db.sql
+  // /Users/samuelboakye/Documents/scala-projects/sambeth/db/sql/db.sql
   "SchedulesRepository" - {
     "findAll" - {
       "should return an empty list when no schedules exist" in {

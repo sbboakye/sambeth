@@ -4,6 +4,7 @@ CREATE TYPE CONNECTOR_TYPE AS ENUM ('Database', 'CloudStorage', 'API', 'FileSyst
 CREATE TYPE EXECUTION_STATUS AS ENUM ('Running, Completed', 'Failed', 'Cancelled');
 CREATE TYPE LOG_LEVEL AS ENUM ('Info', 'Warn', 'Error');
 
+-- SCHEDULES
 CREATE TABLE schedules (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     cron_expression VARCHAR NOT NULL CHECK (cron_expression <> ''),
@@ -11,6 +12,20 @@ CREATE TABLE schedules (
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE OR REPLACE FUNCTION schedules_update_updated_at() RETURNS TRIGGER AS '
+    BEGIN
+        NEW.updated_at = CURRENT_TIMESTAMP;
+        RETURN NEW;
+    END;
+' LANGUAGE plpgsql;
+
+CREATE TRIGGER set_updated_date
+    BEFORE UPDATE
+    ON schedules
+    FOR EACH ROW
+EXECUTE FUNCTION schedules_update_updated_at();
+-- END SCHEDULES
 
 CREATE TABLE pipelines (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
