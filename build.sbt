@@ -26,17 +26,17 @@ lazy val root = (project in file("server"))
       "org.tpolecat"          %% "doobie-hikari"                   % doobieVersion,
       "org.tpolecat"          %% "doobie-postgres"                 % doobieVersion,
       "org.tpolecat"          %% "doobie-postgres-circe"           % doobieVersion,
-      "org.tpolecat"          %% "doobie-specs2"                   % doobieVersion    % "test",
-      "org.tpolecat"          %% "doobie-scalatest"                % doobieVersion    % "test",
+      "org.tpolecat"          %% "doobie-specs2"                   % doobieVersion       % "test",
+      "org.tpolecat"          %% "doobie-scalatest"                % doobieVersion       % "test",
       "io.circe"              %% "circe-core"                      % circeVersion,
       "io.circe"              %% "circe-generic"                   % circeVersion,
       "io.circe"              %% "circe-parser"                    % circeVersion,
       "org.postgresql"         % "postgresql"                      % "42.7.4",
       "org.scalactic"         %% "scalactic"                       % scalatestVersion,
-      "org.scalatest"         %% "scalatest"                       % scalatestVersion % "test",
-      "com.dimafeng"          %% "testcontainers-scala-postgresql" % scalaTestContainers,
-      "com.dimafeng"          %% "testcontainers-scala-scalatest"  % scalaTestContainers,
-      "org.typelevel"         %% "cats-effect-testing-scalatest"   % "1.6.0"          % Test
+      "org.scalatest"         %% "scalatest"                       % scalatestVersion    % "test",
+      "com.dimafeng"          %% "testcontainers-scala-postgresql" % scalaTestContainers % Test,
+      "com.dimafeng"          %% "testcontainers-scala-scalatest"  % scalaTestContainers % Test,
+      "org.typelevel"         %% "cats-effect-testing-scalatest"   % "1.6.0"             % Test
     ),
     Compile / mainClass := Some("com.sbboakye.engine.Application")
   )
