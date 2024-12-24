@@ -20,8 +20,11 @@ trait ScheduleFixture:
   val createValidSchedule: Either[NonEmptyChain[DomainValidation], Schedule] =
     Schedule.create(validCronExpression, validTimezone)
 
-  val validSchedule: Schedule   = createValidSchedule.toOption.get
-  val invalidSchedule: Schedule = validSchedule.copy(cronExpression = null)
+  val validSchedule: Schedule                          = createValidSchedule.toOption.get
+  val invalidScheduleWithNullCronExpression: Schedule  = validSchedule.copy(cronExpression = null)
+  val invalidScheduleWithEmptyCronExpression: Schedule = validSchedule.copy(cronExpression = "")
+  val invalidScheduleWithNullTimezone: Schedule        = validSchedule.copy(timezone = null)
+  val invalidScheduleWithEmptyTimezone: Schedule       = validSchedule.copy(timezone = "")
 
   val nonExistentScheduleId: UUID = UUID.randomUUID()
 

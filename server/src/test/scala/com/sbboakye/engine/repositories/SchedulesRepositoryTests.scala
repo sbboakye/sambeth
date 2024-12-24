@@ -2,6 +2,7 @@ package com.sbboakye.engine.repositories
 
 import cats.*
 import cats.effect.*
+import cats.syntax.all.*
 import cats.effect.testing.scalatest.AsyncIOSpec
 import com.sbboakye.engine.domain.Schedule
 import com.sbboakye.engine.fixtures.ScheduleFixture
@@ -15,6 +16,8 @@ import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
+
+import java.util.UUID
 
 class SchedulesRepositoryTests
     extends AsyncFreeSpec
@@ -100,9 +103,9 @@ class SchedulesRepositoryTests
           SchedulesRepository[IO].use { repo =>
             val result = for {
               id <- repo.create(validSchedule)
-              updatedScheduleObject <- IO.pure(
-                validSchedule.copy(cronExpression = validUpdateCronExpression)
-              )
+              updatedScheduleObject <- validSchedule
+                .copy(cronExpression = validUpdateCronExpression)
+                .pure[IO]
               updatedSchedule <- repo.update(id, updatedScheduleObject)
             } yield updatedSchedule
             result.asserting(_.get should be > 0)
@@ -153,10 +156,121 @@ class SchedulesRepositoryTests
           SchedulesRepository[IO].use { repo =>
             val transactionalResult = (for {
               _         <- repo.create(validSchedule)
-              _         <- repo.create(invalidSchedule)
+              _         <- repo.create(invalidScheduleWithNullCronExpression)
               schedules <- repo.findAll(0, 10)
             } yield schedules).attempt
             transactionalResult.asserting(_.isLeft shouldBe true)
+          }
+        }
+      }
+    }
+
+    "Edge Cases: Empty or Null Data" - {
+      "should fail when inserting a schedule with null cron expression" in {
+        coreSpecTransactor.use { xa =>
+          given transactor: Transactor[IO] = xa
+          SchedulesRepository[IO].use { repo =>
+            val result = repo.create(invalidScheduleWithNullCronExpression).attempt
+            result.asserting(_.left.toSeq.exists {
+              case _: Throwable => true
+              case null         => false
+            } shouldBe true)
+          }
+        }
+      }
+
+      "should fail when inserting a schedule with null timezone" in {
+        coreSpecTransactor.use { xa =>
+          given transactor: Transactor[IO] = xa
+
+          SchedulesRepository[IO].use { repo =>
+            val result = repo.create(invalidScheduleWithNullTimezone).attempt
+            result.asserting(_.left.toSeq.exists {
+              case _: Throwable => true
+              case null         => false
+            } shouldBe true)
+          }
+        }
+      }
+
+      "should fail when inserting a schedule with empty cron expression" in {
+        coreSpecTransactor.use { xa =>
+          given transactor: Transactor[IO] = xa
+          SchedulesRepository[IO].use { repo =>
+            val result = repo.create(invalidScheduleWithEmptyCronExpression).attempt
+            result.asserting(_.left.toSeq.exists {
+              case _: Throwable => true
+              case null         => false
+            } shouldBe true)
+          }
+        }
+      }
+
+      "should fail when inserting a schedule with empty timezone" in {
+        coreSpecTransactor.use { xa =>
+          given transactor: Transactor[IO] = xa
+          SchedulesRepository[IO].use { repo =>
+            val result = repo.create(invalidScheduleWithEmptyTimezone).attempt
+            result.asserting(_.left.toSeq.exists {
+              case _: Throwable => true
+              case null         => false
+            } shouldBe true)
+          }
+        }
+      }
+    }
+
+    "Edge Cases: Concurrent Transactions" - {
+      "should handle concurrent inserts without data loss" in {
+        coreSpecTransactor.use { xa =>
+          given transactor: Transactor[IO] = xa
+
+          SchedulesRepository[IO].use { repo =>
+            val results = for {
+              randomSchedules <- List.fill(10)(validSchedule.copy(id = UUID.randomUUID())).pure[IO]
+              inserts <- randomSchedules.parTraverse(randomSchedule => repo.create(randomSchedule))
+              schedules <- repo.findAll(0, 20)
+            } yield (inserts, schedules)
+            results.asserting(_._1.size shouldBe 10)
+            results.asserting(_._2.size shouldBe 10)
+          }
+        }
+      }
+
+      "should handle concurrent updates correctly" in {
+        coreSpecTransactor.use { xa =>
+          given transactor: Transactor[IO] = xa
+          SchedulesRepository[IO].use { repo =>
+            val results = for {
+              scheduleId <- repo.create(validSchedule)
+              schedules <- List
+                .fill(10)(
+                  validSchedule.copy(id = scheduleId, cronExpression = validUpdateCronExpression)
+                )
+                .pure[IO]
+              updates <- schedules.parTraverse(schedule => repo.update(scheduleId, schedule))
+              fetchedSchedule <- repo.findById(scheduleId)
+            } yield (updates, fetchedSchedule)
+            results.asserting(_._1.flatMap(_.toList).reduceLeftOption(_ + _) shouldBe Option(10))
+            results.asserting(_._2.get.cronExpression shouldBe validUpdateCronExpression)
+          }
+        }
+      }
+    }
+
+    "Edge Cases: Large Dataset" - {
+      "should handle large number of records in findAll" in {
+        coreSpecTransactor.use { xa =>
+          given transactor: Transactor[IO] = xa
+          SchedulesRepository[IO].use { repo =>
+            val results = for {
+              randomSchedules <- List
+                .fill(1000)(validSchedule.copy(id = UUID.randomUUID()))
+                .pure[IO]
+              inserts   <- randomSchedules.parTraverse(schedule => repo.create(schedule))
+              schedules <- repo.findAll(0, 1000)
+            } yield schedules
+            results.asserting(_.size shouldBe 1000)
           }
         }
       }

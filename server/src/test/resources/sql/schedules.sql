@@ -1,7 +1,7 @@
 CREATE TABLE schedules (
                            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                           cron_expression VARCHAR NOT NULL,
-                           timezone VARCHAR NOT NULL,
+                           cron_expression VARCHAR NOT NULL CHECK (cron_expression <> ''),
+                           timezone VARCHAR NOT NULL CHECK (timezone <> ''),
                            created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
                            updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
