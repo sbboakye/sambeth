@@ -19,7 +19,9 @@ trait ScheduleFixture:
   val validTimezone: String             = "UTC"
   val createValidSchedule: Either[NonEmptyChain[DomainValidation], Schedule] =
     Schedule.create(validCronExpression, validTimezone)
-  val validSchedule: Schedule = createValidSchedule.toOption.get
+
+  val validSchedule: Schedule   = createValidSchedule.toOption.get
+  val invalidSchedule: Schedule = validSchedule.copy(cronExpression = null)
 
   val nonExistentScheduleId: UUID = UUID.randomUUID()
 
