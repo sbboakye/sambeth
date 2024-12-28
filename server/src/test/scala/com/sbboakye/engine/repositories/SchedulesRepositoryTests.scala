@@ -31,9 +31,7 @@ class SchedulesRepositoryTests
 
   given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
   given Core[IO, Schedule] with {}
-  //
-  // /Users/samuelboakye/Documents/scala-projects/sambeth/db/sql/db.sql
-  // /Users/samuelboakye/Documents/scala-projects/sambeth/db/sql/db.sql
+
   "SchedulesRepository" - {
     "findAll" - {
       "should return an empty list when no schedules exist" in {

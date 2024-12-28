@@ -10,10 +10,14 @@ import doobie.postgres.implicits.*
 import org.typelevel.log4cats.Logger
 
 import java.util.UUID
+import scala.reflect.ClassTag
 
-trait Core[F[_]: MonadCancelThrow: Logger, Entity: Read]:
+trait Core[F[_]: MonadCancelThrow: Logger, Entity: Read: ClassTag]:
 
-  private def runQuery[A](query: ConnectionIO[A])(using xa: Transactor[F]): F[A] =
+  private def entityName(using ct: ClassTag[Entity]): String =
+    ct.runtimeClass.getSimpleName
+
+  def runQuery[A](query: ConnectionIO[A])(using xa: Transactor[F]): F[A] =
     query.transact(xa)
 
   private def runUpdate(query: Fragment)(using xa: Transactor[F]): F[Option[Int]] =
@@ -23,7 +27,7 @@ trait Core[F[_]: MonadCancelThrow: Logger, Entity: Read]:
     })
 
   def findAll(select: Fragment, offset: Int, limit: Int)(using xa: Transactor[F]): F[Seq[Entity]] =
-    Logger[F].info(s"Fetching all entities with offset: $offset, limit: $limit") *>
+    Logger[F].info(s"Fetching all ${entityName} with offset: $offset, limit: $limit") *>
       runQuery(
         (select ++ fr"LIMIT $limit OFFSET $offset")
           .query[Entity]
@@ -31,7 +35,7 @@ trait Core[F[_]: MonadCancelThrow: Logger, Entity: Read]:
       )
 
   def findByID(select: Fragment, where: Fragment)(using xa: Transactor[F]): F[Option[Entity]] =
-    Logger[F].info(s"Fetching an entity") *>
+    Logger[F].info(s"Fetching ${entityName}") *>
       runQuery(
         (select ++ where)
           .query[Entity]
@@ -39,7 +43,7 @@ trait Core[F[_]: MonadCancelThrow: Logger, Entity: Read]:
       )
 
   def create(insertQuery: Fragment)(using xa: Transactor[F]): F[UUID] =
-    Logger[F].info(s"Creating an entity") *>
+    Logger[F].info(s"Creating ${entityName}") *>
       runQuery(
         insertQuery.update
           .withUniqueGeneratedKeys[UUID]("id")
@@ -48,9 +52,9 @@ trait Core[F[_]: MonadCancelThrow: Logger, Entity: Read]:
   def update(updateQuery: Fragment)(using
       xa: Transactor[F]
   ): F[Option[Int]] =
-    Logger[F].info(s"Updating entity") *>
+    Logger[F].info(s"Updating ${entityName}") *>
       runUpdate(updateQuery)
 
   def delete(deleteQuery: Fragment)(using xa: Transactor[F]): F[Option[Int]] =
-    Logger[F].info(s"Deleting an entity") *>
+    Logger[F].info(s"Deleting ${entityName}") *>
       runUpdate(deleteQuery)

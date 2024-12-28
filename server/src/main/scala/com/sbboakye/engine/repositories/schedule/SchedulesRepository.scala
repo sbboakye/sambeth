@@ -18,7 +18,7 @@ class SchedulesRepository[F[_]: MonadCancelThrow: Logger] private (using
     core.findAll(ScheduleQueries.select, offset, limit)
 
   def findById(id: UUID): F[Option[Schedule]] =
-    core.findByID(ScheduleQueries.select, ScheduleQueries.where(id))
+    core.findByID(ScheduleQueries.select, ScheduleQueries.where(id = id))
 
   def create(schedule: Schedule): F[UUID] = core.create(ScheduleQueries.insert(schedule))
 
