@@ -15,7 +15,7 @@ class PipelinesRepository[F[_]: MonadCancelThrow: Logger] private (using
 ):
 
   def findAll(offset: Int, limit: Int): F[Seq[Pipeline]] =
-    core.findAll(PipelineQueries.select, offset, limit)
+    core.findAll(PipelineQueries.select, offset, limit, PipelineQueries.limitAndOffset)
 
   def findById(id: UUID): F[Option[Pipeline]] =
     core.findByID(PipelineQueries.select, PipelineQueries.where(id = id))

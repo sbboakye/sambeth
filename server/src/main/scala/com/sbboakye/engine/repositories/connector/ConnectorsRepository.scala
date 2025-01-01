@@ -26,7 +26,7 @@ class ConnectorsRepository[F[_]: MonadCancelThrow: Logger] private (using
 ):
 
   def findAll(offset: Int, limit: Int): F[Seq[Connector]] =
-    core.findAll(ConnectorQueries.select, offset, limit)
+    core.findAll(ConnectorQueries.select, offset, limit, ConnectorQueries.limitAndOffset)
 
   def findById(id: UUID): F[Option[Connector]] =
     core.findByID(ConnectorQueries.select, ConnectorQueries.where(id = id))

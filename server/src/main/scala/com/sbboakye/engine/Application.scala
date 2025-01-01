@@ -43,8 +43,8 @@ object Application extends IOApp.Simple:
           .use { xa =>
             given transactor: Transactor[IO] = xa
             StagesRepository[IO].use { repo =>
-//              repo.findAll(0, 10)
-              repo.findById(UUID.fromString("22222222-2222-2222-2222-222222222222"))
+              repo.findAll(0, 10)
+//              repo.findById(UUID.fromString("22222222-2222-2222-2222-222222222222"))
             }
 //            ConnectorsRepository[IO].use { repo =>
 //              repo.findAll(0, 10)

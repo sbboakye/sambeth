@@ -17,7 +17,7 @@ trait Core[F[_]: MonadCancelThrow: Logger, Entity: Read: ClassTag]:
   private def entityName(using ct: ClassTag[Entity]): String =
     ct.runtimeClass.getSimpleName
 
-  def runQuery[A](query: ConnectionIO[A])(using xa: Transactor[F]): F[A] =
+  private def runQuery[A](query: ConnectionIO[A])(using xa: Transactor[F]): F[A] =
     query.transact(xa)
 
   private def runUpdate(query: Fragment)(using xa: Transactor[F]): F[Option[Int]] =
@@ -26,10 +26,12 @@ trait Core[F[_]: MonadCancelThrow: Logger, Entity: Read: ClassTag]:
       case n => Some(n)
     })
 
-  def findAll(select: Fragment, offset: Int, limit: Int)(using xa: Transactor[F]): F[Seq[Entity]] =
-    Logger[F].info(s"Fetching all ${entityName} with offset: $offset, limit: $limit") *>
+  def findAll(select: Fragment, offset: Int, limit: Int, limitAndOffset: (Int, Int) => Fragment)(
+      using xa: Transactor[F]
+  ): F[Seq[Entity]] =
+    Logger[F].info(s"Fetching all ${entityName} with offset: ${offset}, limit: ${limit}") *>
       runQuery(
-        (select ++ fr"LIMIT $limit OFFSET $offset")
+        (select ++ limitAndOffset(offset, limit))
           .query[Entity]
           .to[Seq]
       )

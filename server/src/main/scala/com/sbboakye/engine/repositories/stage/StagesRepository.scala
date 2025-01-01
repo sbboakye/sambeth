@@ -113,7 +113,7 @@ class StagesRepository[F[_]: MonadCancelThrow: Logger: Parallel] private (using
     def getStages: F[
       Seq[StageConnectorJoined]
     ] =
-      (StageQueries.select ++ fr"LIMIT $limit OFFSET $offset")
+      (StageQueries.select ++ StageQueries.limitAndOffset(offset, limit))
         .query[StageConnectorJoined]
         .to[Seq]
         .transact(xa)

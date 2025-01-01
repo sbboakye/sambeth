@@ -11,6 +11,9 @@ import java.util.UUID
 trait HasCommonAttributes:
   val tableName: String
 
+  def limitAndOffset(offset: Int, limit: Int): Fragment =
+    fr"LIMIT $limit OFFSET $offset"
+
   def where(column: String = "id", id: UUID): Fragment =
     fr"WHERE ${Fragment.const(column)} = $id"
 
