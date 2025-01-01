@@ -3,7 +3,6 @@ package com.sbboakye.engine.repositories.connector
 import cats.*
 import cats.effect.*
 import com.sbboakye.engine.domain.Connector
-import com.sbboakye.engine.domain.CustomTypes.ConnectorConfiguration
 import com.sbboakye.engine.repositories.core.Core
 import doobie.*
 import doobie.implicits.*

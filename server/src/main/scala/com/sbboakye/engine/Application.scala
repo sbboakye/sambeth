@@ -6,8 +6,13 @@ import cats.implicits.*
 import com.sbboakye.engine.config.{AppConfig, Database}
 import pureconfig.ConfigSource
 import com.sbboakye.engine.config.syntax.*
-import com.sbboakye.engine.domain.CustomTypes.ConnectorConfiguration
-import com.sbboakye.engine.domain.{Connector, Stage, StageType}
+import com.sbboakye.engine.domain.CustomTypes.{
+  PipelineId,
+  StageConfiguration,
+  StageConnectorJoined,
+  StageId
+}
+import com.sbboakye.engine.domain.{Connector, ConnectorType, Stage, StageType}
 import com.sbboakye.engine.repositories.connector.ConnectorsRepository
 import com.sbboakye.engine.repositories.core.Core
 import com.sbboakye.engine.repositories.stage.StagesRepository
@@ -24,11 +29,11 @@ import java.util.UUID
 
 object Application extends IOApp.Simple:
 
-  import com.sbboakye.engine.repositories.core.ConnectorConfigurationJsonMeta.given
+  import com.sbboakye.engine.repositories.core.DBFieldMappingsMeta.given
 
   given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
-//  given core: Core[IO, Tuple7[UUID, UUID, StageType, Map[String, String], Int, OffsetDateTime, OffsetDateTime]] with {}
-  given core: Core[IO, Connector] with {}
+  given core2: Core[IO, Stage] with     {}
+  given core1: Core[IO, Connector] with {}
 
   override def run: IO[Unit] =
     ConfigSource.default.loadF[IO, AppConfig].flatMap { case AppConfig(dbConfig) =>
@@ -37,14 +42,15 @@ object Application extends IOApp.Simple:
           .makeDbResource[IO](dbConfig)
           .use { xa =>
             given transactor: Transactor[IO] = xa
-//          StagesRepository[IO].use { repo =>
-//            repo.findAll(0, 10)
-//          }
-            ConnectorsRepository[IO].use { repo =>
-              repo.findAll(0, 10)
+            StagesRepository[IO].use { repo =>
+//              repo.findAll(0, 10)
+              repo.findById(UUID.fromString("22222222-2222-2222-2222-222222222222"))
             }
+//            ConnectorsRepository[IO].use { repo =>
+//              repo.findAll(0, 10)
+//            }
           }
           .toResource
       appResource
-        .use(conns => IO.println(conns(0)) *> IO.println("Server has started...") *> IO.never)
+        .use(conns => IO.println(conns.head) *> IO.println("Ending Now..."))
     }

@@ -1,5 +1,6 @@
 package com.sbboakye.engine.domain
 
+import java.time.OffsetDateTime
 import java.util.UUID
 
 object CustomTypes {
@@ -13,5 +14,21 @@ object CustomTypes {
 
   type StageConfiguration     = Map[String, String]
   type ConnectorConfiguration = Map[String, String]
+  type StageConnectorJoined = Tuple14[
+    UUID,
+    UUID,
+    StageType,
+    Map[String, String],
+    Int,
+    OffsetDateTime,
+    OffsetDateTime,
+    UUID,
+    UUID,
+    String,
+    ConnectorType,
+    Map[String, String],
+    OffsetDateTime,
+    OffsetDateTime
+  ]
 
 }

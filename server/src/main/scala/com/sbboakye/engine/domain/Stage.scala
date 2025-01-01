@@ -1,13 +1,11 @@
 package com.sbboakye.engine.domain
 
-import cats.data.NonEmptyList
-import com.sbboakye.engine.domain.CustomTypes.{ConnectorId, PipelineId, StageConfiguration, StageId}
-import doobie.{Get, Meta, Put, Read}
-import doobie.postgres.circe.jsonb.implicits.*
-import io.circe.parser.*
-import io.circe.syntax.*
-import io.circe.generic.auto.*
-import org.postgresql.util.PGobject
+import com.sbboakye.engine.domain.CustomTypes.{PipelineId, StageConfiguration, StageId}
+import doobie.Read
+import doobie.implicits.*
+import doobie.generic.auto.*
+import doobie.postgres.*
+import doobie.postgres.implicits.*
 
 import java.time.OffsetDateTime
 import java.util.UUID
@@ -24,13 +22,36 @@ case class Stage(
 )
 
 object Stage:
-  given jsonMetaMap: Meta[Map[String, String]] = Meta.Advanced
-    .other[PGobject]("jsonb")
-    .imap[Map[String, String]](obj =>
-      decode[Map[String, String]](obj.getValue).getOrElse(Map.empty)
-    )(map => {
-      val pgObject = new PGobject()
-      pgObject.setType("jsonb")
-      pgObject.setValue(map.asJson.noSpaces)
-      pgObject
-    })
+  given Read[Stage] =
+    Read[
+      (
+          StageId,
+          PipelineId,
+          StageType,
+          StageConfiguration,
+          Int,
+          OffsetDateTime,
+          OffsetDateTime
+      )
+    ]
+      .map {
+        case (
+              id,
+              pipelineId,
+              stageType,
+              configuration,
+              position,
+              createdAt,
+              updatedAt
+            ) =>
+          Stage(
+            id,
+            pipelineId,
+            stageType,
+            Seq.empty[Connector],
+            configuration,
+            position,
+            createdAt,
+            updatedAt
+          )
+      }

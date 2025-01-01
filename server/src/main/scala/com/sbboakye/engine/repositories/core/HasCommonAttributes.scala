@@ -1,5 +1,6 @@
 package com.sbboakye.engine.repositories.core
 
+import com.sbboakye.engine.repositories.stage.StageQueries.tableName
 import doobie.*
 import doobie.implicits.*
 import doobie.postgres.*
@@ -11,7 +12,7 @@ trait HasCommonAttributes:
   val tableName: String
 
   def where(column: String = "id", id: UUID): Fragment =
-    fr"WHERE ${column} = $id"
+    fr"WHERE ${Fragment.const(column)} = $id"
 
   def delete(id: UUID): Fragment =
     fr"DELETE FROM ${Fragment.const(tableName)}" ++ where(id = id)

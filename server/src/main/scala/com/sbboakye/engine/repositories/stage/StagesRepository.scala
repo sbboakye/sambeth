@@ -6,12 +6,19 @@ import cats.instances.seq.*
 import cats.effect.*
 import cats.syntax.all.*
 import cats.syntax.parallel.*
-import com.sbboakye.engine.domain.CustomTypes.{StageConfiguration, StageId}
-import com.sbboakye.engine.domain.{Connector, Stage, StageType, StageWithConnectors}
+import com.sbboakye.engine.domain.CustomTypes.{
+  ConnectorConfiguration,
+  PipelineId,
+  StageConfiguration,
+  StageConnectorJoined,
+  StageId
+}
+import com.sbboakye.engine.domain.{Connector, ConnectorType, Stage, StageType, StageWithConnectors}
 import com.sbboakye.engine.repositories.connector.ConnectorQueries
 import com.sbboakye.engine.repositories.core.Core
 import doobie.*
 import doobie.implicits.*
+import doobie.generic.auto.*
 import doobie.postgres.*
 import doobie.postgres.implicits.*
 import io.circe.*
@@ -25,91 +32,111 @@ import java.util.UUID
 
 class StagesRepository[F[_]: MonadCancelThrow: Logger: Parallel] private (using
     xa: Transactor[F],
-    core: Core[F, (UUID, UUID, StageType, Map[String, String], Int, OffsetDateTime, OffsetDateTime)]
+    core: Core[F, Stage]
 ):
-
-  private def getConnectors(stageId: StageId): F[Seq[Connector]] =
-    (ConnectorQueries.select ++ ConnectorQueries.where(column = "stage_id", id = stageId))
-      .query[Connector]
-      .to[Seq]
-      .transact(xa)
+  import com.sbboakye.engine.repositories.core.DBFieldMappingsMeta.given
 
   private def enrichStages[A](
-      fetchStages: => F[Seq[A]],
-      getConnectorsForStage: A => F[Seq[Connector]],
-      convertToStage: (A, Seq[Connector]) => Stage
+      fetchStages: => F[Seq[StageConnectorJoined]]
   ): F[Seq[Stage]] =
-    fetchStages
-      .map(_.parTraverse { stage =>
-        getConnectorsForStage(stage).map { connectors =>
-          convertToStage(stage, connectors)
+    fetchStages.flatMap(rows => {
+      val grouped = rows.groupBy(_._1)
+      grouped.toSeq.parTraverse { case (stageId, stageRows) =>
+        val (
+          stage_id,
+          pipeline_id,
+          stage_type,
+          stage_configuration,
+          stage_position,
+          stage_created_at,
+          stage_updated_at,
+          _,
+          _,
+          _,
+          _,
+          _,
+          _,
+          _
+        ) = stageRows.head
+        val connectors = stageRows.flatMap {
+          case (
+                _,
+                _,
+                _,
+                _,
+                _,
+                _,
+                _,
+                connector_id,
+                connector_stage_id,
+                connector_name,
+                connector_type,
+                connector_configuration,
+                connector_created_at,
+                connector_updated_at
+              ) =>
+            Some(
+              Connector(
+                id = connector_id,
+                stageId = connector_stage_id,
+                name = connector_name,
+                connectorType = connector_type,
+                configuration = connector_configuration,
+                createdAt = connector_created_at,
+                updatedAt = connector_updated_at
+              )
+            )
         }
-      })
-      .flatten
+        MonadCancelThrow[F].pure(
+          Stage(
+            id = stage_id,
+            pipelineID = pipeline_id,
+            stageType = stage_type,
+            connectors = connectors,
+            configuration = stage_configuration,
+            position = stage_position,
+            createdAt = stage_created_at,
+            updatedAt = stage_updated_at
+          )
+        )
+      }
+    })
 
   def findAll(
       offset: Int,
       limit: Int
   ): F[Seq[Stage]] =
-    getAllStagesAfterJoin(offset: Int, limit: Int)
+    fetchStagesWithConnectorsJoin(offset: Int, limit: Int)
 
-  private def getAllStagesAfterJoin(offset: Int, limit: Int): F[Seq[Stage]] =
+  private def fetchStagesWithConnectorsJoin(offset: Int, limit: Int): F[Seq[Stage]] =
 
     def getStages: F[
-      Seq[(UUID, UUID, StageType, Map[String, String], Int, OffsetDateTime, OffsetDateTime)]
+      Seq[StageConnectorJoined]
     ] =
       (StageQueries.select ++ fr"LIMIT $limit OFFSET $offset")
-        .query[(UUID, UUID, StageType, Map[String, String], Int, OffsetDateTime, OffsetDateTime)]
+        .query[StageConnectorJoined]
         .to[Seq]
         .transact(xa)
 
-    enrichStages(
-      fetchStages = getStages,
-      getConnectorsForStage = stage => getConnectors(stage._1),
-      convertToStage = (stage, connectors) => StageWithConnectors(stage, connectors).convertToStage
-    )
-
-//    for {
-//      allStages <- getStages
-//      stagesWithConnectors <- allStages
-//        .parTraverse { stage =>
-//          val matchedConnectors = getConnectors(stage._1)
-//          matchedConnectors.map(connectors => StageWithConnectors(stage, connectors).convertToStage)
-//        }
-//    } yield stagesWithConnectors
+    enrichStages(getStages)
 
   def findById(id: UUID): F[Option[Stage]] =
-    getStageAfterJoin(id)
+    fetchStageWithConnectors(id)
 
-  private def getStageAfterJoin(id: UUID): F[Option[Stage]] =
+  private def fetchStageWithConnectors(id: UUID): F[Option[Stage]] =
 
     def getStage: F[
-      Option[(UUID, UUID, StageType, Map[String, String], Int, OffsetDateTime, OffsetDateTime)]
+      Option[StageConnectorJoined]
     ] =
-      (StageQueries.select ++ StageQueries.where(id = id))
-        .query[(UUID, UUID, StageType, Map[String, String], Int, OffsetDateTime, OffsetDateTime)]
+      (StageQueries.select ++ StageQueries.where(column = "s.id", id = id))
+        .query[StageConnectorJoined]
         .option
         .transact(xa)
 
     getStage.flatMap {
-      case Some(stage) =>
-        enrichStages(
-          fetchStages = Applicative[F].pure(Seq(stage)),
-          getConnectorsForStage = stage => getConnectors(stage._1),
-          convertToStage =
-            (stage, connectors) => StageWithConnectors(stage, connectors).convertToStage
-        ).map(_.headOption)
-      case None => Applicative[F].pure(None)
+      case Some(stage) => enrichStages(MonadCancelThrow[F].pure(Seq(stage))).map(_.headOption)
+      case None        => MonadCancelThrow[F].pure(None)
     }
-
-//    for {
-//      stageOption <- getStage
-//      stageWithConnector <- stageOption
-//        .parTraverse { stage =>
-//          val matchedConnectors = getConnectors(stage._1)
-//          matchedConnectors.map(connectors => StageWithConnectors(stage, connectors).convertToStage)
-//        }
-//    } yield stageWithConnector
 
   def create(pipeline: Stage): F[UUID] = core.create(StageQueries.insert(pipeline))
 
@@ -121,9 +148,6 @@ class StagesRepository[F[_]: MonadCancelThrow: Logger: Parallel] private (using
 object StagesRepository:
   def apply[F[_]: Async: Logger: Parallel](using
       xa: Transactor[F],
-      core: Core[
-        F,
-        (UUID, UUID, StageType, Map[String, String], Int, OffsetDateTime, OffsetDateTime)
-      ]
+      core: Core[F, Stage]
   ): Resource[F, StagesRepository[F]] =
     Resource.eval(Async[F].pure(new StagesRepository[F]))
