@@ -1,30 +1,18 @@
 package com.sbboakye.engine.repositories.stage
 
 import cats.*
-import cats.instances.list.*
 import cats.instances.seq.*
 import cats.effect.*
 import cats.syntax.all.*
 import cats.syntax.parallel.*
-import com.sbboakye.engine.domain.CustomTypes.{
-  ConnectorConfiguration,
-  PipelineId,
-  StageConfiguration,
-  StageConnectorJoined,
-  StageId
-}
-import com.sbboakye.engine.domain.{Connector, ConnectorType, Stage, StageType, StageWithConnectors}
-import com.sbboakye.engine.repositories.connector.ConnectorQueries
+import com.sbboakye.engine.domain.CustomTypes.StageConnectorJoined
+import com.sbboakye.engine.domain.{Connector, ConnectorType, Stage, StageType}
 import com.sbboakye.engine.repositories.core.Core
 import doobie.*
 import doobie.implicits.*
 import doobie.generic.auto.*
 import doobie.postgres.*
 import doobie.postgres.implicits.*
-import io.circe.*
-import io.circe.generic.auto.*
-import io.circe.parser.*
-import io.circe.syntax.*
 import org.typelevel.log4cats.Logger
 
 import java.time.OffsetDateTime

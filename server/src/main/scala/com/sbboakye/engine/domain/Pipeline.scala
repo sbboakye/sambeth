@@ -8,7 +8,7 @@ case class Pipeline(
     id: PipelineId,
     name: String,
     description: Option[String],
-    stages: List[Stage],
+    stages: Seq[Stage],
     schedule: Option[Schedule],
     status: PipelineStatus,
     createdAt: OffsetDateTime,

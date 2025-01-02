@@ -1,7 +1,11 @@
 package com.sbboakye.engine.repositories
 
+import cats.*
+import cats.syntax.all.*
 import cats.effect.{IO, Resource}
 import com.dimafeng.testcontainers.{JdbcDatabaseContainer, PostgreSQLContainer}
+import doobie.*
+import doobie.implicits.*
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
 import doobie.util.transactor.Transactor
@@ -37,3 +41,10 @@ trait CoreSpec:
       ce
     )
   } yield xa
+
+  def executeSqlScript(scriptPath: String)(using xa: Transactor[IO]): IO[Unit] =
+    val script     = scala.io.Source.fromResource(scriptPath).mkString
+    val statements = script.split(";").filter(_.trim.nonEmpty)
+    statements.toList.traverse_ { sql =>
+      Fragment.const(sql.trim).update.run.transact(xa)
+    }

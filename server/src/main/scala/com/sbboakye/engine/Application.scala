@@ -6,13 +6,8 @@ import cats.implicits.*
 import com.sbboakye.engine.config.{AppConfig, Database}
 import pureconfig.ConfigSource
 import com.sbboakye.engine.config.syntax.*
-import com.sbboakye.engine.domain.CustomTypes.{
-  PipelineId,
-  StageConfiguration,
-  StageConnectorJoined,
-  StageId
-}
-import com.sbboakye.engine.domain.{Connector, ConnectorType, Stage, StageType}
+import com.sbboakye.engine.domain.CustomTypes.StageId
+import com.sbboakye.engine.domain.{Connector, ConnectorType, Stage}
 import com.sbboakye.engine.repositories.connector.ConnectorsRepository
 import com.sbboakye.engine.repositories.core.Core
 import com.sbboakye.engine.repositories.stage.StagesRepository
@@ -25,7 +20,6 @@ import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 import java.time.OffsetDateTime
-import java.util.UUID
 
 object Application extends IOApp.Simple:
 
@@ -35,6 +29,16 @@ object Application extends IOApp.Simple:
   given core2: Core[IO, Stage] with     {}
   given core1: Core[IO, Connector] with {}
 
+  val connector1: Connector = Connector(
+    java.util.UUID.randomUUID(),
+    java.util.UUID.randomUUID(),
+    "test connector 1",
+    ConnectorType.Database,
+    Map("db_name" -> "postgresql"),
+    OffsetDateTime.now(),
+    OffsetDateTime.now()
+  )
+
   override def run: IO[Unit] =
     ConfigSource.default.loadF[IO, AppConfig].flatMap { case AppConfig(dbConfig) =>
       val appResource =
@@ -42,15 +46,16 @@ object Application extends IOApp.Simple:
           .makeDbResource[IO](dbConfig)
           .use { xa =>
             given transactor: Transactor[IO] = xa
-            StagesRepository[IO].use { repo =>
-              repo.findAll(0, 10)
-//              repo.findById(UUID.fromString("22222222-2222-2222-2222-222222222222"))
-            }
-//            ConnectorsRepository[IO].use { repo =>
+//            StagesRepository[IO].use { repo =>
 //              repo.findAll(0, 10)
+//              repo.findById(UUID.fromString("22222222-2222-2222-2222-222222222222"))
 //            }
+            ConnectorsRepository[IO].use { repo =>
+//              repo.findAll(0, 10)
+              repo.create(connector1)
+            }
           }
           .toResource
       appResource
-        .use(conns => IO.println(conns.head) *> IO.println("Ending Now..."))
+        .use(conns => IO.println(conns) *> IO.println("Ending Now..."))
     }

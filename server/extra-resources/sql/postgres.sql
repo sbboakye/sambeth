@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS hstore;
+
 CREATE TYPE PIPELINE_STATUS AS ENUM ('Active', 'Inactive', 'Draft');
 CREATE TYPE STAGE_TYPE AS ENUM ('Source', 'Transformation', 'Sink');
 CREATE TYPE CONNECTOR_TYPE AS ENUM ('Database', 'CloudStorage', 'API', 'FileSystem');

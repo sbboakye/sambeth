@@ -1,6 +1,5 @@
 package com.sbboakye.engine.repositories.core
 
-import com.sbboakye.engine.repositories.stage.StageQueries.tableName
 import doobie.*
 import doobie.implicits.*
 import doobie.postgres.*

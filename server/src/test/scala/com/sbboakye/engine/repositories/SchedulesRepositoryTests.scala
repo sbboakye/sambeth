@@ -18,7 +18,6 @@ import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 import java.util.UUID
-import scala.io.Source
 
 class SchedulesRepositoryTests
     extends AsyncFreeSpec
@@ -114,7 +113,7 @@ class SchedulesRepositoryTests
         }
       }
 
-      "should return None is schedule does not exist" in {
+      "should return None if schedule does not exist" in {
         coreSpecTransactor.use { xa =>
           given transactor: Transactor[IO] = xa
           SchedulesRepository[IO].use { repo =>

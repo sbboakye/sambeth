@@ -20,12 +20,12 @@ object ConnectorQueries extends HasCommonAttributes:
 
   def insert(connector: Connector): Fragment =
     fr"""INSERT INTO ${Fragment.const(tableName)} (stage_id, name, connector_type, configuration)
-           VALUES (${connector.stageId}, ${connector.name}), ${connector.connectorType.toString}, ${connector.configuration}))"""
+           VALUES (${connector.stageId}, ${connector.name}, ${connector.connectorType}::connector_type, ${connector.configuration}::jsonb)"""
 
   def update(id: UUID, connector: Connector): Fragment =
     fr"""UPDATE ${Fragment.const(tableName)}
            SET stage_id = ${connector.stageId},
                name = ${connector.name},
-               connector_type = ${connector.connectorType.toString},
-               configuration = ${connector.configuration}
+               connector_type = ${connector.connectorType}::connector_type,
+               configuration = ${connector.configuration}::jsonb
                """ ++ where(id = id)

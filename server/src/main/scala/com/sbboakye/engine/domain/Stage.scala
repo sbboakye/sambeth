@@ -2,13 +2,11 @@ package com.sbboakye.engine.domain
 
 import com.sbboakye.engine.domain.CustomTypes.{PipelineId, StageConfiguration, StageId}
 import doobie.Read
-import doobie.implicits.*
 import doobie.generic.auto.*
 import doobie.postgres.*
 import doobie.postgres.implicits.*
 
 import java.time.OffsetDateTime
-import java.util.UUID
 
 case class Stage(
     id: StageId,
