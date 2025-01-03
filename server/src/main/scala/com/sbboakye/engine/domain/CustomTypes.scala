@@ -22,13 +22,13 @@ object CustomTypes {
     Int,
     OffsetDateTime,
     OffsetDateTime,
-    UUID,
-    UUID,
-    String,
-    ConnectorType,
-    Map[String, String],
-    OffsetDateTime,
-    OffsetDateTime
+    Option[UUID],                // connector_id
+    Option[UUID],                // connector_stage_id
+    Option[String],              // connector_name
+    Option[ConnectorType],       // connector_type
+    Option[Map[String, String]], // connector_configuration
+    Option[OffsetDateTime],      // connector_created_at
+    Option[OffsetDateTime]       // connector_updated_at
   ]
 
 }

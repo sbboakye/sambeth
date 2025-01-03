@@ -12,10 +12,13 @@ import java.util.UUID
 trait ConnectorFixture:
   val connector1Id: UUID           = UUID.randomUUID()
   val connector2Id: UUID           = UUID.randomUUID()
-  val stageId: UUID                = UUID.fromString("22222222-2222-2222-2222-222222222221")
-  val pipelineId: UUID             = UUID.randomUUID()
+  val stageId1: UUID               = UUID.fromString("22222222-2222-2222-2222-222222222221")
+  val stageId2: UUID               = UUID.fromString("22222222-2222-2222-2222-222222222222")
+  val pipelineId: UUID             = UUID.fromString("11111111-1111-1111-1111-111111111111")
   val nonExistentConnectorId: UUID = UUID.randomUUID()
+  val nonExistentStageId: UUID     = UUID.randomUUID()
   val updateConnectorName: String  = "Updated name"
+  val updateStageConfiguration: Map[String, String] = Map("source" -> "sink")
 
   val validCronExpression: String       = "0 0 12 * * ?"
   val validUpdateCronExpression: String = "0 0 11 * * ?"
@@ -26,7 +29,7 @@ trait ConnectorFixture:
 
   val connector1: Connector = Connector(
     connector1Id,
-    stageId,
+    stageId1,
     "test connector 1",
     Database,
     Map("db_name" -> "postgresql"),
@@ -36,7 +39,7 @@ trait ConnectorFixture:
 
   val connector2: Connector = Connector(
     connector2Id,
-    stageId,
+    stageId1,
     "test connector 2",
     API,
     Map("url" -> "example.com"),
@@ -44,8 +47,8 @@ trait ConnectorFixture:
     OffsetDateTime.now()
   )
 
-  val stage: Stage = Stage(
-    stageId,
+  val stage1: Stage = Stage(
+    stageId1,
     pipelineId,
     Source,
     Seq(connector1, connector2),
@@ -55,11 +58,22 @@ trait ConnectorFixture:
     OffsetDateTime.now()
   )
 
+  val stage2: Stage = Stage(
+    stageId2,
+    pipelineId,
+    Source,
+    Seq(connector2),
+    Map("some_config" -> "some value"),
+    2,
+    OffsetDateTime.now(),
+    OffsetDateTime.now()
+  )
+
   val pipeline: Pipeline = Pipeline(
     pipelineId,
     "pipeline",
     Some("A simple test pipeline"),
-    Seq(stage),
+    Seq(stage1),
     Some(validSchedule),
     Draft,
     OffsetDateTime.now(),

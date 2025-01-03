@@ -12,8 +12,6 @@ import java.util.UUID
 object StageQueries extends HasCommonAttributes:
   override val tableName: String = "stages"
 
-//  SELECT id, pipeline_id, stage_type, configuration, position, created_at, updated_at FROM
-
   val select: Fragment =
     fr"""
         SELECT
@@ -22,16 +20,15 @@ object StageQueries extends HasCommonAttributes:
         FROM ${Fragment.const(tableName)} s
         LEFT JOIN connectors c ON s.id = c.stage_id
       """
-//      ++ Fragment.const(tableName)
 
   def insert(stage: Stage): Fragment =
     fr"""INSERT INTO ${Fragment.const(tableName)} (pipeline_id, stage_type, configuration, position)
-           VALUES (${stage.pipelineID}, ${stage.stageType.toString}), ${stage.configuration}, ${stage.position}))"""
+           VALUES (${stage.pipelineID}, ${stage.stageType}::stage_type, ${stage.configuration}::jsonb, ${stage.position})"""
 
   def update(id: UUID, stage: Stage): Fragment =
     fr"""UPDATE ${Fragment.const(tableName)}
            SET pipeline_id = ${stage.pipelineID},
-               stage_type = ${stage.stageType.toString},
-               configuration = ${stage.configuration},
+               stage_type = ${stage.stageType.toString}::stage_type,
+               configuration = ${stage.configuration}::jsonb,
                position = ${stage.position}
                """ ++ where(id = id)

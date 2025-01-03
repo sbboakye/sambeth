@@ -55,13 +55,13 @@ class StagesRepository[F[_]: MonadCancelThrow: Logger: Parallel] private (using
                 _,
                 _,
                 _,
-                connector_id,
-                connector_stage_id,
-                connector_name,
-                connector_type,
-                connector_configuration,
-                connector_created_at,
-                connector_updated_at
+                Some(connector_id),
+                Some(connector_stage_id),
+                Some(connector_name),
+                Some(connector_type),
+                Some(connector_configuration),
+                Some(connector_created_at),
+                Some(connector_updated_at)
               ) =>
             Some(
               Connector(
@@ -74,6 +74,7 @@ class StagesRepository[F[_]: MonadCancelThrow: Logger: Parallel] private (using
                 updatedAt = connector_updated_at
               )
             )
+          case _ => None
         }
         MonadCancelThrow[F].pure(
           Stage(
