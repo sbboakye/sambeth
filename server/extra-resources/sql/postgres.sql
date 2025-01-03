@@ -3,7 +3,7 @@ CREATE EXTENSION IF NOT EXISTS hstore;
 CREATE TYPE PIPELINE_STATUS AS ENUM ('Active', 'Inactive', 'Draft');
 CREATE TYPE STAGE_TYPE AS ENUM ('Source', 'Transformation', 'Sink');
 CREATE TYPE CONNECTOR_TYPE AS ENUM ('Database', 'CloudStorage', 'API', 'FileSystem');
-CREATE TYPE EXECUTION_STATUS AS ENUM ('Running, Completed', 'Failed', 'Cancelled');
+CREATE TYPE EXECUTION_STATUS AS ENUM ('Running', 'Completed', 'Failed', 'Cancelled');
 CREATE TYPE LOG_LEVEL AS ENUM ('Info', 'Warn', 'Error');
 
 -- SCHEDULES
@@ -137,7 +137,8 @@ CREATE TABLE execution_logs (
     timestamp TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     message TEXT NOT NULL,
     log_level LOG_LEVEL NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE OR REPLACE FUNCTION execution_logs_update_updated_at() RETURNS TRIGGER AS '

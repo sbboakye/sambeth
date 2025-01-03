@@ -4,8 +4,6 @@ import com.sbboakye.engine.domain.Schedule
 import com.sbboakye.engine.repositories.core.HasCommonAttributes
 import doobie.*
 import doobie.implicits.*
-import doobie.postgres.*
-import doobie.postgres.implicits.*
 
 import java.util.UUID
 

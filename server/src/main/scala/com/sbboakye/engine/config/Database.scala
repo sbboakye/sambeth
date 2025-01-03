@@ -10,7 +10,7 @@ import doobie.util.log.LogEvent
 object Database {
 
   private def printSQLLogHandler[F[_]](using F: Async[F]): LogHandler[F] = new LogHandler[F] {
-    def run(logEvent: LogEvent): F[Unit] = F.pure(println(logEvent.sql))
+    def run(logEvent: LogEvent): F[Unit] = F.pure(println(logEvent.sql)) // li F[_]
   }
 
   def makeDbResource[F[_]: Async](config: DBConfig): Resource[F, HikariTransactor[F]] =
