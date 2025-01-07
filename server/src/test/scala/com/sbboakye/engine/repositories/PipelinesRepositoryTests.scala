@@ -4,14 +4,11 @@ import cats.*
 import cats.effect.*
 import cats.syntax.all.*
 import cats.effect.testing.scalatest.AsyncIOSpec
-import com.sbboakye.engine.domain.Connector
+import com.sbboakye.engine.domain.Pipeline
 import com.sbboakye.engine.fixtures.CoreFixture
 import com.sbboakye.engine.repositories.core.Core
-import com.sbboakye.engine.repositories.connector.ConnectorsRepository
+import com.sbboakye.engine.repositories.pipeline.PipelinesRepository
 import doobie.*
-import doobie.implicits.*
-import doobie.postgres.*
-import doobie.postgres.implicits.*
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 import org.typelevel.log4cats.Logger
@@ -19,7 +16,7 @@ import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 import java.util.UUID
 
-class ConnectorsRepositoryTests
+class PipelinesRepositoryTests
     extends AsyncFreeSpec
     with AsyncIOSpec
     with Matchers
@@ -27,32 +24,31 @@ class ConnectorsRepositoryTests
     with CoreFixture:
 
   override val initSqlString: String = "sql/postgres.sql"
-  val additionSQLScript: String      = "connectors.sql"
+  val additionSQLScript: String      = "pipelines.sql"
 
-  import com.sbboakye.engine.repositories.core.DBFieldMappingsMeta.given
   given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
-  given Core[IO, Connector] with {}
+  given Core[IO, Pipeline] with {}
 
-  "ConnectorsRepository" - {
+  "PipelinesRepository" - {
     "findAll" - {
-      "should return an empty list when no connectors exist" in {
+      "should return an empty list when no pipelines exist" in {
         coreSpecTransactor.use { xa =>
           given transactor: Transactor[IO] = xa
-          ConnectorsRepository[IO].use { repo =>
+          PipelinesRepository[IO].use { repo =>
             val result = repo.findAll(0, 10)
             result.asserting(_ shouldBe empty)
           }
         }
       }
 
-      "should return a list of connectors when connectors exist" in {
+      "should return a list of pipelines when pipelines exist" in {
         coreSpecTransactor.use { xa =>
           given transactor: Transactor[IO] = xa
-          ConnectorsRepository[IO].use { repo =>
+          PipelinesRepository[IO].use { repo =>
             val result = for {
               -           <- executeSqlScript(additionSQLScript)
-              _           <- repo.create(connector1)
-              _           <- repo.create(connector2)
+              _           <- repo.create(pipeline1)
+              _           <- repo.create(pipeline2)
               queryResult <- repo.findAll(0, 10)
             } yield queryResult
             result.asserting(_ should not be empty)
@@ -62,23 +58,23 @@ class ConnectorsRepositoryTests
     }
 
     "findById" - {
-      "should return None if the connector does not exist" in {
+      "should return None if the pipeline does not exist" in {
         coreSpecTransactor.use { xa =>
           given transactor: Transactor[IO] = xa
-          ConnectorsRepository[IO].use { repo =>
+          PipelinesRepository[IO].use { repo =>
             val result = repo.findById(nonExistentId)
             result.asserting(_ shouldBe None)
           }
         }
       }
 
-      "should return the correct connector if the connector exists" in {
+      "should return the correct pipeline if the pipeline exists" in {
         coreSpecTransactor.use { xa =>
           given transactor: Transactor[IO] = xa
-          ConnectorsRepository[IO].use { repo =>
+          PipelinesRepository[IO].use { repo =>
             val result = for {
               -           <- executeSqlScript(additionSQLScript)
-              uuid        <- repo.create(connector1)
+              uuid        <- repo.create(pipeline1)
               queryResult <- repo.findById(uuid)
             } yield (queryResult, uuid)
             result.asserting((queryResult, uuid) => {
@@ -90,13 +86,13 @@ class ConnectorsRepositoryTests
     }
 
     "create" - {
-      "should create a new connector and return its id" in {
+      "should create a new pipeline and return its id" in {
         coreSpecTransactor.use { xa =>
           given transactor: Transactor[IO] = xa
-          ConnectorsRepository[IO].use { repo =>
+          PipelinesRepository[IO].use { repo =>
             val result = for {
               -           <- executeSqlScript(additionSQLScript)
-              queryResult <- repo.create(connector1)
+              queryResult <- repo.create(pipeline1)
             } yield queryResult
             result.asserting(_ should not be null)
           }
@@ -105,30 +101,30 @@ class ConnectorsRepositoryTests
     }
 
     "update" - {
-      "should update an existing connector" in {
+      "should update an existing pipeline" in {
         coreSpecTransactor.use { xa =>
           given transactor: Transactor[IO] = xa
-          ConnectorsRepository[IO].use { repo =>
+          PipelinesRepository[IO].use { repo =>
             val result = for {
               -  <- executeSqlScript(additionSQLScript)
-              id <- repo.create(connector1)
-              updatedConnectorObject <- connector1
-                .copy(name = updateConnectorName)
+              id <- repo.create(pipeline1)
+              updatedPipelineObject <- pipeline1
+                .copy(description = updatePipelineDescription)
                 .pure[IO]
-              updatedConnector <- repo.update(id, updatedConnectorObject)
-            } yield updatedConnector
+              updatedPipeline <- repo.update(id, updatedPipelineObject)
+            } yield updatedPipeline
             result.asserting(_.get should be > 0)
           }
         }
       }
 
-      "should return None if connector does not exist" in {
+      "should return None if pipeline does not exist" in {
         coreSpecTransactor.use { xa =>
           given transactor: Transactor[IO] = xa
-          ConnectorsRepository[IO].use { repo =>
+          PipelinesRepository[IO].use { repo =>
             val result = for {
               -           <- executeSqlScript(additionSQLScript)
-              queryResult <- repo.update(nonExistentId, connector1)
+              queryResult <- repo.update(nonExistentId, pipeline1)
             } yield queryResult
             result.asserting(_ shouldBe None)
           }
@@ -137,13 +133,13 @@ class ConnectorsRepositoryTests
     }
 
     "delete" - {
-      "should delete an existing connector" in {
+      "should delete an existing pipeline" in {
         coreSpecTransactor.use { xa =>
           given transactor: Transactor[IO] = xa
-          ConnectorsRepository[IO].use { repo =>
+          PipelinesRepository[IO].use { repo =>
             val result = for {
               -            <- executeSqlScript(additionSQLScript)
-              id           <- repo.create(connector1)
+              id           <- repo.create(pipeline1)
               deleteResult <- repo.delete(id)
             } yield deleteResult
             result.asserting(_.get should be > 0)
@@ -151,10 +147,10 @@ class ConnectorsRepositoryTests
         }
       }
 
-      "should return None if connector does not exist" in {
+      "should return None if pipeline does not exist" in {
         coreSpecTransactor.use { xa =>
           given transactor: Transactor[IO] = xa
-          ConnectorsRepository[IO].use { repo =>
+          PipelinesRepository[IO].use { repo =>
             val result = repo.delete(nonExistentId)
             result.asserting(_ shouldBe None)
           }
@@ -167,15 +163,13 @@ class ConnectorsRepositoryTests
         coreSpecTransactor.use { xa =>
           given transactor: Transactor[IO] = xa
 
-          ConnectorsRepository[IO].use { repo =>
+          PipelinesRepository[IO].use { repo =>
             val results = for {
-              -                <- executeSqlScript(additionSQLScript)
-              randomConnectors <- List.fill(10)(connector1.copy(id = UUID.randomUUID())).pure[IO]
-              inserts <- randomConnectors.parTraverse(randomConnector =>
-                repo.create(randomConnector)
-              )
-              connectors <- repo.findAll(0, 20)
-            } yield (inserts, connectors)
+              -               <- executeSqlScript(additionSQLScript)
+              randomPipelines <- List.fill(10)(pipeline1.copy(id = UUID.randomUUID())).pure[IO]
+              inserts <- randomPipelines.parTraverse(randomPipeline => repo.create(randomPipeline))
+              pipelines <- repo.findAll(0, 20)
+            } yield (inserts, pipelines)
             results.asserting(_._1.size shouldBe 10)
             results.asserting(_._2.size shouldBe 10)
           }
@@ -185,20 +179,20 @@ class ConnectorsRepositoryTests
       "should handle concurrent updates correctly" in {
         coreSpecTransactor.use { xa =>
           given transactor: Transactor[IO] = xa
-          ConnectorsRepository[IO].use { repo =>
+          PipelinesRepository[IO].use { repo =>
             val results = for {
-              -           <- executeSqlScript(additionSQLScript)
-              connectorId <- repo.create(connector1)
-              connectors <- List
+              -          <- executeSqlScript(additionSQLScript)
+              pipelineId <- repo.create(pipeline1)
+              pipelines <- List
                 .fill(10)(
-                  connector1.copy(id = connectorId, name = updateConnectorName)
+                  pipeline1.copy(id = pipelineId, description = updatePipelineDescription)
                 )
                 .pure[IO]
-              updates <- connectors.parTraverse(connector => repo.update(connectorId, connector))
-              fetchedConnector <- repo.findById(connectorId)
-            } yield (updates, fetchedConnector)
+              updates <- pipelines.parTraverse(pipeline => repo.update(pipelineId, pipeline))
+              fetchedPipeline <- repo.findById(pipelineId)
+            } yield (updates, fetchedPipeline)
             results.asserting(_._1.flatMap(_.toList).reduceLeftOption(_ + _) shouldBe Option(10))
-            results.asserting(_._2.get.name shouldBe updateConnectorName)
+            results.asserting(_._2.get.description shouldBe updatePipelineDescription)
           }
         }
       }
@@ -208,15 +202,15 @@ class ConnectorsRepositoryTests
       "should handle large number of records in findAll" in {
         coreSpecTransactor.use { xa =>
           given transactor: Transactor[IO] = xa
-          ConnectorsRepository[IO].use { repo =>
+          PipelinesRepository[IO].use { repo =>
             val results = for {
               - <- executeSqlScript(additionSQLScript)
-              randomConnectors <- List
-                .fill(1000)(connector1.copy(id = UUID.randomUUID()))
+              randomPipelines <- List
+                .fill(1000)(pipeline1.copy(id = UUID.randomUUID()))
                 .pure[IO]
-              inserts    <- randomConnectors.parTraverse(connector => repo.create(connector))
-              connectors <- repo.findAll(0, 1000)
-            } yield connectors
+              inserts   <- randomPipelines.parTraverse(pipeline => repo.create(pipeline))
+              pipelines <- repo.findAll(0, 1000)
+            } yield pipelines
             results.asserting(_.size shouldBe 1000)
           }
         }

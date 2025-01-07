@@ -1,10 +1,10 @@
 package com.sbboakye.engine.domain
 
-import com.sbboakye.engine.fixtures.ScheduleFixture
+import com.sbboakye.engine.fixtures.CoreFixture
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 
-class ScheduleCreationTests extends AnyFreeSpec with Matchers with ScheduleFixture {
+class ScheduleCreationTests extends AnyFreeSpec with Matchers with CoreFixture {
 
   "Schedule creation logic" - {
     "create" - {

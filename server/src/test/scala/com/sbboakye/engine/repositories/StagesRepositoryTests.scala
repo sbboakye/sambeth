@@ -5,13 +5,10 @@ import cats.effect.*
 import cats.syntax.all.*
 import cats.effect.testing.scalatest.AsyncIOSpec
 import com.sbboakye.engine.domain.Stage
-import com.sbboakye.engine.fixtures.ConnectorFixture
+import com.sbboakye.engine.fixtures.CoreFixture
 import com.sbboakye.engine.repositories.core.Core
 import com.sbboakye.engine.repositories.stage.StagesRepository
 import doobie.*
-import doobie.implicits.*
-import doobie.postgres.*
-import doobie.postgres.implicits.*
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 import org.typelevel.log4cats.Logger
@@ -24,7 +21,7 @@ class StagesRepositoryTests
     with AsyncIOSpec
     with Matchers
     with CoreSpec
-    with ConnectorFixture:
+    with CoreFixture:
 
   override val initSqlString: String = "sql/postgres.sql"
   val additionSQLScript: String      = "stages.sql"
@@ -61,21 +58,22 @@ class StagesRepositoryTests
     }
 
     "findById" - {
-      "should return None if the stage does not exist" - {
+      "should return None if the stage does not exist" in {
         coreSpecTransactor.use { xa =>
           given transactor: Transactor[IO] = xa
           StagesRepository[IO].use { repo =>
-            val result = repo.findById(nonExistentStageId)
+            val result = repo.findById(nonExistentId)
             result.asserting(_ shouldBe None)
           }
         }
       }
 
-      "should return the correct stage if the stage exists" - {
+      "should return the correct stage if the stage exists" in {
         coreSpecTransactor.use { xa =>
           given transactor: Transactor[IO] = xa
           StagesRepository[IO].use { repo =>
             val result = for {
+              -           <- executeSqlScript(additionSQLScript)
               uuid        <- repo.create(stage1)
               queryResult <- repo.findById(uuid)
             } yield (queryResult, uuid)
@@ -126,7 +124,7 @@ class StagesRepositoryTests
           StagesRepository[IO].use { repo =>
             val result = for {
               -           <- executeSqlScript(additionSQLScript)
-              queryResult <- repo.update(nonExistentStageId, stage1)
+              queryResult <- repo.update(nonExistentId, stage1)
             } yield queryResult
             result.asserting(_ shouldBe None)
           }
@@ -153,7 +151,7 @@ class StagesRepositoryTests
         coreSpecTransactor.use { xa =>
           given transactor: Transactor[IO] = xa
           StagesRepository[IO].use { repo =>
-            val result = repo.delete(nonExistentStageId)
+            val result = repo.delete(nonExistentId)
             result.asserting(_ shouldBe None)
           }
         }

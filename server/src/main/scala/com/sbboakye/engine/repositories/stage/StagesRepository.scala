@@ -24,72 +24,44 @@ class StagesRepository[F[_]: MonadCancelThrow: Logger: Parallel] private (using
 ):
   import com.sbboakye.engine.repositories.core.DBFieldMappingsMeta.given
 
-  private def enrichStages[A](
-      fetchStages: => F[Seq[StageConnectorJoined]]
-  ): F[Seq[Stage]] =
-    fetchStages.flatMap(rows => {
-      val grouped = rows.groupBy(_._1)
+  private def enrichStages(fetchStages: => F[Seq[StageConnectorJoined]]): F[Seq[Stage]] =
+    fetchStages.flatMap { rows =>
+      // Group rows by stageId
+      val grouped = rows.groupBy(_.stageId)
+
       grouped.toSeq.parTraverse { case (stageId, stageRows) =>
-        val (
-          stage_id,
-          pipeline_id,
-          stage_type,
-          stage_configuration,
-          stage_position,
-          stage_created_at,
-          stage_updated_at,
-          _,
-          _,
-          _,
-          _,
-          _,
-          _,
-          _
-        ) = stageRows.head
-        val connectors = stageRows.flatMap {
-          case (
-                _,
-                _,
-                _,
-                _,
-                _,
-                _,
-                _,
-                Some(connector_id),
-                Some(connector_stage_id),
-                Some(connector_name),
-                Some(connector_type),
-                Some(connector_configuration),
-                Some(connector_created_at),
-                Some(connector_updated_at)
-              ) =>
-            Some(
-              Connector(
-                id = connector_id,
-                stageId = connector_stage_id,
-                name = connector_name,
-                connectorType = connector_type,
-                configuration = connector_configuration,
-                createdAt = connector_created_at,
-                updatedAt = connector_updated_at
-              )
+        val firstRow = stageRows.head
+
+        // Extract connectors for the stage
+        val connectors = stageRows.flatMap { row =>
+          row.connectorId.map { _ =>
+            Connector(
+              id = row.connectorId.get,
+              stageId = row.connectorStageId.get,
+              name = row.connectorName.get,
+              connectorType = row.connectorType.get,
+              configuration = row.connectorConfiguration.get,
+              createdAt = row.connectorCreatedAt.get,
+              updatedAt = row.connectorUpdatedAt.get
             )
-          case _ => None
+          }
         }
+
+        // Create the Stage object
         MonadCancelThrow[F].pure(
           Stage(
-            id = stage_id,
-            pipelineID = pipeline_id,
-            stageType = stage_type,
+            id = firstRow.stageId,
+            pipelineID = firstRow.pipelineId,
+            stageType = firstRow.stageType,
             connectors = connectors,
-            configuration = stage_configuration,
-            position = stage_position,
-            createdAt = stage_created_at,
-            updatedAt = stage_updated_at
+            configuration = firstRow.stageConfiguration,
+            position = firstRow.stagePosition,
+            createdAt = firstRow.stageCreatedAt,
+            updatedAt = firstRow.stageUpdatedAt
           )
         )
       }
-    })
+    }
 
   def findAll(
       offset: Int,

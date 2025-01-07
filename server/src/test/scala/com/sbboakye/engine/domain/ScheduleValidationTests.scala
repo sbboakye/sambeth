@@ -1,12 +1,12 @@
 package com.sbboakye.engine.domain
 
-import com.sbboakye.engine.fixtures.ScheduleFixture
+import com.sbboakye.engine.fixtures.CoreFixture
 
 import cats.data.ValidatedNec
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.should.Matchers
 
-class ScheduleValidationTests extends AnyFreeSpec with Matchers with ScheduleFixture {
+class ScheduleValidationTests extends AnyFreeSpec with Matchers with CoreFixture {
 
   "Schedule validation logic" - {
     "validateCronExpression" - {

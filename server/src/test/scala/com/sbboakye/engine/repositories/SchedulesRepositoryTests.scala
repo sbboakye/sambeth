@@ -5,7 +5,7 @@ import cats.effect.*
 import cats.syntax.all.*
 import cats.effect.testing.scalatest.AsyncIOSpec
 import com.sbboakye.engine.domain.Schedule
-import com.sbboakye.engine.fixtures.ScheduleFixture
+import com.sbboakye.engine.fixtures.CoreFixture
 import com.sbboakye.engine.repositories.core.Core
 import com.sbboakye.engine.repositories.schedule.SchedulesRepository
 import doobie.*
@@ -24,7 +24,7 @@ class SchedulesRepositoryTests
     with AsyncIOSpec
     with Matchers
     with CoreSpec
-    with ScheduleFixture:
+    with CoreFixture:
 
   override val initSqlString: String = "sql/postgres.sql"
 
@@ -58,17 +58,17 @@ class SchedulesRepositoryTests
     }
 
     "findById" - {
-      "should return None if the schedule does not exist" - {
+      "should return None if the schedule does not exist" in {
         coreSpecTransactor.use { xa =>
           given transactor: Transactor[IO] = xa
           SchedulesRepository[IO].use { repo =>
-            val result = repo.findById(nonExistentScheduleId)
+            val result = repo.findById(nonExistentId)
             result.asserting(_ shouldBe None)
           }
         }
       }
 
-      "should return the correct schedule if the schedule exists" - {
+      "should return the correct schedule if the schedule exists" in {
         coreSpecTransactor.use { xa =>
           given transactor: Transactor[IO] = xa
           SchedulesRepository[IO].use { repo =>
@@ -117,7 +117,7 @@ class SchedulesRepositoryTests
         coreSpecTransactor.use { xa =>
           given transactor: Transactor[IO] = xa
           SchedulesRepository[IO].use { repo =>
-            val result = repo.update(nonExistentScheduleId, validSchedule)
+            val result = repo.update(nonExistentId, validSchedule)
             result.asserting(_ shouldBe None)
           }
         }
@@ -142,7 +142,7 @@ class SchedulesRepositoryTests
         coreSpecTransactor.use { xa =>
           given transactor: Transactor[IO] = xa
           SchedulesRepository[IO].use { repo =>
-            val result = repo.delete(nonExistentScheduleId)
+            val result = repo.delete(nonExistentId)
             result.asserting(_ shouldBe None)
           }
         }

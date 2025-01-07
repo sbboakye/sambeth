@@ -48,17 +48,19 @@ object Schedule:
   }
 
   def create(
+      id: UUID = UUID.randomUUID(),
       cronExpression: String,
-      timezone: String
+      timezone: String,
+      createdAt: OffsetDateTime = OffsetDateTime.now(),
+      updatedAt: OffsetDateTime = OffsetDateTime.now()
   ): Either[NonEmptyChain[DomainValidation], Schedule] =
-    val validationResult = validateSchedulerFields(cronExpression, timezone).toEither
-    validationResult match
-      case Right((cronExpression, timezone)) =>
+    validateSchedulerFields(cronExpression, timezone).toEither match
+      case Right((validCron, validTimezone)) =>
         Schedule(
-          id = UUID.randomUUID(),
-          cronExpression = cronExpression,
-          timezone = timezone,
-          createdAt = OffsetDateTime.MAX,
-          updatedAt = OffsetDateTime.MAX
+          id = id,
+          cronExpression = validCron,
+          timezone = validTimezone,
+          createdAt = createdAt,
+          updatedAt = updatedAt
         ).asRight
-      case Left(e) => e.asLeft
+      case Left(errors) => errors.asLeft
