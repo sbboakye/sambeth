@@ -137,22 +137,8 @@ CREATE TABLE execution_logs (
     timestamp TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     message TEXT NOT NULL,
     log_level LOG_LEVEL NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-
-CREATE OR REPLACE FUNCTION execution_logs_update_updated_at() RETURNS TRIGGER AS '
-    BEGIN
-        NEW.updated_at = CURRENT_TIMESTAMP;
-        RETURN NEW;
-    END;
-' LANGUAGE plpgsql;
-
-CREATE TRIGGER set_updated_date
-    BEFORE UPDATE
-    ON execution_logs
-    FOR EACH ROW
-EXECUTE FUNCTION execution_logs_update_updated_at();
 -- END EXECUTION LOGS
 
 -- FOR TESTING

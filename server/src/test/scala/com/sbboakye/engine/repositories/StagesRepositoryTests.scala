@@ -24,7 +24,7 @@ class StagesRepositoryTests
     with CoreFixture:
 
   override val initSqlString: String = "sql/postgres.sql"
-  val additionSQLScript: String      = "stages.sql"
+  val additionSQLScript: String      = "pipelines.sql"
 
   given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
   given Core[IO, Stage] with {}

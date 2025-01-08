@@ -1,4 +1,3 @@
-INSERT INTO schedules (id, cron_expression, timezone)
-VALUES
-    ('66666666-6666-6666-6666-666666666661', '0 12 * * *', 'UTC'),
-    ('66666666-6666-6666-6666-666666666662', '0 6 * * 1', 'America/New_York')
+INSERT INTO pipelines (id, name, description, schedule_id, status)
+VALUES ('11111111-1111-1111-1111-111111111111', 'Pipeline 1', 'Description for Pipeline 1', NULL, 'Active'),
+        ('11111111-1111-1111-1111-111111111112', 'Pipeline 2', 'Description for Pipeline 2', NULL, 'Inactive');

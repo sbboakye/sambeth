@@ -5,6 +5,7 @@ import cats.data.NonEmptyChain
 import com.sbboakye.engine.domain.{
   Connector,
   DomainValidation,
+  ExecutionLog,
   InvalidCronExpression,
   InvalidTimezone,
   Pipeline,
@@ -12,6 +13,7 @@ import com.sbboakye.engine.domain.{
   Stage
 }
 import com.sbboakye.engine.domain.ConnectorType.{API, Database}
+import com.sbboakye.engine.domain.LogLevel.Info
 import com.sbboakye.engine.domain.StageType.Source
 import com.sbboakye.engine.domain.PipelineStatus.Draft
 
@@ -26,6 +28,9 @@ trait CoreFixture:
   val stageId2: UUID              = UUID.fromString("22222222-2222-2222-2222-222222222222")
   val pipelineId1: UUID           = UUID.fromString("11111111-1111-1111-1111-111111111111")
   val pipelineId2: UUID           = UUID.fromString("11111111-1111-1111-1111-111111111112")
+  val executionId1: UUID          = UUID.fromString("44444444-4444-4444-4444-444444444441")
+  val executionId2: UUID          = UUID.fromString("44444444-4444-4444-4444-444444444442")
+  val executionLogId: UUID        = UUID.fromString("55555555-5555-5555-5555-555555555551")
   val nonExistentId: UUID         = UUID.randomUUID()
   val updateConnectorName: String = "Updated name"
   val updateStageConfiguration: Map[String, String] = Map("source" -> "sink")
@@ -99,6 +104,16 @@ trait CoreFixture:
     None,
     Draft,
     OffsetDateTime.now(),
+    OffsetDateTime.now()
+  )
+
+  val executionLog: ExecutionLog = ExecutionLog(
+    executionLogId,
+    executionId1,
+    stageId1,
+    OffsetDateTime.now(),
+    "Some was written to the logs",
+    Info,
     OffsetDateTime.now()
   )
 

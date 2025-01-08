@@ -27,7 +27,8 @@ class ConnectorsRepositoryTests
     with CoreFixture:
 
   override val initSqlString: String = "sql/postgres.sql"
-  val additionSQLScript: String      = "connectors.sql"
+  val additionSQLScript1: String     = "pipelines.sql"
+  val additionSQLScript2: String     = "stages.sql"
 
   import com.sbboakye.engine.repositories.core.DBFieldMappingsMeta.given
   given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
@@ -50,7 +51,8 @@ class ConnectorsRepositoryTests
           given transactor: Transactor[IO] = xa
           ConnectorsRepository[IO].use { repo =>
             val result = for {
-              -           <- executeSqlScript(additionSQLScript)
+              -           <- executeSqlScript(additionSQLScript1)
+              -           <- executeSqlScript(additionSQLScript2)
               _           <- repo.create(connector1)
               _           <- repo.create(connector2)
               queryResult <- repo.findAll(0, 10)
@@ -77,7 +79,8 @@ class ConnectorsRepositoryTests
           given transactor: Transactor[IO] = xa
           ConnectorsRepository[IO].use { repo =>
             val result = for {
-              -           <- executeSqlScript(additionSQLScript)
+              -           <- executeSqlScript(additionSQLScript1)
+              -           <- executeSqlScript(additionSQLScript2)
               uuid        <- repo.create(connector1)
               queryResult <- repo.findById(uuid)
             } yield (queryResult, uuid)
@@ -95,7 +98,8 @@ class ConnectorsRepositoryTests
           given transactor: Transactor[IO] = xa
           ConnectorsRepository[IO].use { repo =>
             val result = for {
-              -           <- executeSqlScript(additionSQLScript)
+              -           <- executeSqlScript(additionSQLScript1)
+              -           <- executeSqlScript(additionSQLScript2)
               queryResult <- repo.create(connector1)
             } yield queryResult
             result.asserting(_ should not be null)
@@ -110,7 +114,8 @@ class ConnectorsRepositoryTests
           given transactor: Transactor[IO] = xa
           ConnectorsRepository[IO].use { repo =>
             val result = for {
-              -  <- executeSqlScript(additionSQLScript)
+              -  <- executeSqlScript(additionSQLScript1)
+              -  <- executeSqlScript(additionSQLScript2)
               id <- repo.create(connector1)
               updatedConnectorObject <- connector1
                 .copy(name = updateConnectorName)
@@ -127,7 +132,8 @@ class ConnectorsRepositoryTests
           given transactor: Transactor[IO] = xa
           ConnectorsRepository[IO].use { repo =>
             val result = for {
-              -           <- executeSqlScript(additionSQLScript)
+              -           <- executeSqlScript(additionSQLScript1)
+              -           <- executeSqlScript(additionSQLScript2)
               queryResult <- repo.update(nonExistentId, connector1)
             } yield queryResult
             result.asserting(_ shouldBe None)
@@ -142,7 +148,8 @@ class ConnectorsRepositoryTests
           given transactor: Transactor[IO] = xa
           ConnectorsRepository[IO].use { repo =>
             val result = for {
-              -            <- executeSqlScript(additionSQLScript)
+              -            <- executeSqlScript(additionSQLScript1)
+              -            <- executeSqlScript(additionSQLScript2)
               id           <- repo.create(connector1)
               deleteResult <- repo.delete(id)
             } yield deleteResult
@@ -169,7 +176,8 @@ class ConnectorsRepositoryTests
 
           ConnectorsRepository[IO].use { repo =>
             val results = for {
-              -                <- executeSqlScript(additionSQLScript)
+              -                <- executeSqlScript(additionSQLScript1)
+              -                <- executeSqlScript(additionSQLScript2)
               randomConnectors <- List.fill(10)(connector1.copy(id = UUID.randomUUID())).pure[IO]
               inserts <- randomConnectors.parTraverse(randomConnector =>
                 repo.create(randomConnector)
@@ -187,7 +195,8 @@ class ConnectorsRepositoryTests
           given transactor: Transactor[IO] = xa
           ConnectorsRepository[IO].use { repo =>
             val results = for {
-              -           <- executeSqlScript(additionSQLScript)
+              -           <- executeSqlScript(additionSQLScript1)
+              -           <- executeSqlScript(additionSQLScript2)
               connectorId <- repo.create(connector1)
               connectors <- List
                 .fill(10)(
@@ -210,7 +219,8 @@ class ConnectorsRepositoryTests
           given transactor: Transactor[IO] = xa
           ConnectorsRepository[IO].use { repo =>
             val results = for {
-              - <- executeSqlScript(additionSQLScript)
+              - <- executeSqlScript(additionSQLScript1)
+              - <- executeSqlScript(additionSQLScript2)
               randomConnectors <- List
                 .fill(1000)(connector1.copy(id = UUID.randomUUID()))
                 .pure[IO]

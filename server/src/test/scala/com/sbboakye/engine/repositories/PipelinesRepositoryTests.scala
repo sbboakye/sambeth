@@ -24,7 +24,7 @@ class PipelinesRepositoryTests
     with CoreFixture:
 
   override val initSqlString: String = "sql/postgres.sql"
-  val additionSQLScript: String      = "pipelines.sql"
+  val additionSQLScript: String      = "schedules.sql"
 
   given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
   given Core[IO, Pipeline] with {}
