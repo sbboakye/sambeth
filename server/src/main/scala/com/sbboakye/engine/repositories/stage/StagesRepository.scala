@@ -17,7 +17,7 @@ import org.typelevel.log4cats.Logger
 
 import java.util.UUID
 
-class StagesRepository[F[_]: MonadCancelThrow: Logger: Parallel] private (using
+class StagesRepository[F[_]: MonadCancelThrow: Logger](using
     xa: Transactor[F],
     core: Core[F, Stage],
     connectorsRepository: ConnectorsRepository[F]
@@ -65,9 +65,9 @@ class StagesRepository[F[_]: MonadCancelThrow: Logger: Parallel] private (using
       .transact(xa)
 
 object StagesRepository:
-  def apply[F[_]: Async: Logger: Parallel](using
+  def apply[F[_]: MonadCancelThrow: Logger](using
       xa: Transactor[F],
       core: Core[F, Stage],
       connectorsRepository: ConnectorsRepository[F]
   ): Resource[F, StagesRepository[F]] =
-    Resource.eval(Async[F].pure(new StagesRepository[F]))
+    Resource.eval(MonadCancelThrow[F].pure(new StagesRepository[F]))

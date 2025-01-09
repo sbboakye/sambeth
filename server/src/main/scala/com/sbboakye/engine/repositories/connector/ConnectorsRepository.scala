@@ -15,7 +15,7 @@ import org.typelevel.log4cats.Logger
 
 import java.util.UUID
 
-class ConnectorsRepository[F[_]: MonadCancelThrow: Logger] private (using
+class ConnectorsRepository[F[_]: MonadCancelThrow: Logger](using
     xa: Transactor[F],
     core: Core[F, Connector]
 ):
@@ -43,8 +43,8 @@ class ConnectorsRepository[F[_]: MonadCancelThrow: Logger] private (using
 
 object ConnectorsRepository:
 
-  def apply[F[_]: Async: Logger](using
+  def apply[F[_]: MonadCancelThrow: Logger](using
       xa: Transactor[F],
       core: Core[F, Connector]
   ): Resource[F, ConnectorsRepository[F]] =
-    Resource.eval(Async[F].pure(new ConnectorsRepository[F]))
+    Resource.eval(MonadCancelThrow[F].pure(new ConnectorsRepository[F]))

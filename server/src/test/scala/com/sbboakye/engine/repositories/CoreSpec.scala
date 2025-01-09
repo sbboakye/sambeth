@@ -8,7 +8,6 @@ import doobie.*
 import doobie.implicits.*
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
-import doobie.util.transactor.Transactor
 import org.testcontainers.utility.DockerImageName
 
 trait CoreSpec:

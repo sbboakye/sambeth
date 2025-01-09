@@ -29,7 +29,7 @@ import org.typelevel.log4cats.Logger
 import java.time.OffsetDateTime
 import java.util.UUID
 
-class PipelinesRepository[F[_]: MonadCancelThrow: Logger: Parallel] private (using
+class PipelinesRepository[F[_]: MonadCancelThrow: Logger](using
     xa: Transactor[F],
     core: Core[F, Pipeline],
     stagesRepository: StagesRepository[F]
@@ -82,9 +82,9 @@ class PipelinesRepository[F[_]: MonadCancelThrow: Logger: Parallel] private (usi
   def delete(id: UUID): F[Option[Int]] = core.delete(PipelineQueries.delete(id))
 
 object PipelinesRepository:
-  def apply[F[_]: Async: Logger: Parallel](using
+  def apply[F[_]: MonadCancelThrow: Logger](using
       xa: Transactor[F],
       core: Core[F, Pipeline],
       stagesRepository: StagesRepository[F]
   ): Resource[F, PipelinesRepository[F]] =
-    Resource.eval(Async[F].pure(new PipelinesRepository[F]))
+    Resource.eval(MonadCancelThrow[F].pure(new PipelinesRepository[F]))
