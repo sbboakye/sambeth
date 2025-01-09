@@ -1,12 +1,15 @@
 package com.sbboakye.engine.domain
 
 import com.sbboakye.engine.domain.CustomTypes.{PipelineId, StageConfiguration, StageId}
+import com.sbboakye.engine.repositories.connector.ConnectorsRepository
+import com.sbboakye.engine.repositories.pipeline.PipelinesRepository
 import doobie.Read
 import doobie.generic.auto.*
 import doobie.postgres.*
 import doobie.postgres.implicits.*
 
 import java.time.OffsetDateTime
+import java.util.UUID
 
 case class Stage(
     id: StageId,
@@ -17,9 +20,14 @@ case class Stage(
     position: Int,
     createdAt: OffsetDateTime,
     updatedAt: OffsetDateTime
-)
+) {
+  def getPipeline[F[_]](using repository: PipelinesRepository[F]): F[Option[Pipeline]] =
+    repository.findById(pipelineID)
+}
 
 object Stage:
+  import com.sbboakye.engine.repositories.core.DBFieldMappingsMeta.given
+
   given Read[Stage] =
     Read[
       (
@@ -53,3 +61,8 @@ object Stage:
             updatedAt
           )
       }
+
+  def loadConnectors[F[_]](listOfIds: List[StageId])(using
+      connectorRepository: ConnectorsRepository[F]
+  ): F[Seq[Connector]] =
+    connectorRepository.findAllByStageIds(listOfIds)

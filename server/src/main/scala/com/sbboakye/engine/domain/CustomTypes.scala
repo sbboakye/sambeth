@@ -71,4 +71,32 @@ object CustomTypes {
       scheduleUpdatedAt: Option[OffsetDateTime]
   )
 
+  case class ExecutionPipelineExecutionLogJoined(
+      // Executions table fields
+      executionId: UUID,
+      executionPipelineId: UUID,
+      executionStartTime: OffsetDateTime,
+      executionEndTime: Option[OffsetDateTime],
+      executionStatus: ExecutionStatus,
+      executionCreatedAt: OffsetDateTime,
+      executionUpdatedAt: OffsetDateTime,
+
+      // Execution Logs table fields
+      executionLogId: UUID,
+      logStageId: UUID,
+      logTimestamp: OffsetDateTime,
+      logMessage: String,
+      logLevel: LogLevel,
+      logCreatedAt: OffsetDateTime,
+
+      // Pipelines table fields
+      pipelineId: UUID,
+      pipelineName: String,
+      pipelineDescription: Option[String],
+      pipelineScheduleId: Option[UUID],
+      pipelineStatus: PipelineStatus,
+      pipelineCreatedAt: OffsetDateTime,
+      pipelineUpdatedAt: OffsetDateTime
+  )
+
 }

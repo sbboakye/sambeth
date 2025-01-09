@@ -48,17 +48,20 @@ object Application extends IOApp.Simple:
           .makeDbResource[IO](dbConfig)
           .use { xa =>
             given transactor: Transactor[IO] = xa
-//            StagesRepository[IO].use { repo =>
-//              repo.findAll(0, 10)
-//              repo.findById(UUID.fromString("22222222-2222-2222-2222-222222222222"))
-//            }
-//            ConnectorsRepository[IO].use { repo =>
-////              repo.findAll(0, 10)
-//              repo.create(connector1)
-//            }
-            PipelinesRepository[IO].use { repo =>
-              repo.findAll(0, 10)
+            ConnectorsRepository[IO].use { cRepo =>
+              given s: ConnectorsRepository[IO] = cRepo
+              StagesRepository[IO].use { repo =>
+                repo.findAll(0, 10)
+                //              repo.findById(UUID.fromString("22222222-2222-2222-2222-222222222222"))
+              }
             }
+//            ConnectorsRepository[IO].use { repo =>
+//              repo.findAll(0, 10)
+////              repo.create(connector1)
+//            }
+//            PipelinesRepository[IO].use { repo =>
+//              repo.findAll(0, 10)
+//            }
           }
           .toResource
       appResource

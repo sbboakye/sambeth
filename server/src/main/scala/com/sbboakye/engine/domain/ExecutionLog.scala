@@ -6,7 +6,6 @@ import java.time.OffsetDateTime
 
 case class ExecutionLog(
     id: ExecutionLogId,
-    executionId: ExecutionId,
     stageId: StageId,
     timestamp: OffsetDateTime,
     message: String,
