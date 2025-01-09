@@ -90,7 +90,7 @@ trait CoreFixture:
     "pipeline 1",
     Some("A simple test pipeline 1"),
     Seq(stage1),
-    Some(validSchedule),
+    Some(validSchedule.id),
     Draft,
     OffsetDateTime.now(),
     OffsetDateTime.now()

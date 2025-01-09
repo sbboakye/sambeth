@@ -9,11 +9,10 @@ import doobie.postgres.*
 import doobie.postgres.implicits.*
 
 import java.time.OffsetDateTime
-import java.util.UUID
 
 case class Stage(
     id: StageId,
-    pipelineID: PipelineId,
+    pipelineId: PipelineId,
     stageType: StageType,
     connectors: Seq[Connector],
     configuration: StageConfiguration,
@@ -21,8 +20,10 @@ case class Stage(
     createdAt: OffsetDateTime,
     updatedAt: OffsetDateTime
 ) {
-  def getPipeline[F[_]](using repository: PipelinesRepository[F]): F[Option[Pipeline]] =
-    repository.findById(pipelineID)
+  def getPipelineMetadata[F[_]](using
+      repository: PipelinesRepository[F]
+  ): F[Option[PipelineMetadata]] =
+    repository.findMetadataById(pipelineId)
 }
 
 object Stage:

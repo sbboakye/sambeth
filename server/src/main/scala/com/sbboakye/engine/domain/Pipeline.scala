@@ -1,6 +1,11 @@
 package com.sbboakye.engine.domain
 
-import com.sbboakye.engine.domain.CustomTypes.PipelineId
+import cats.*
+import cats.syntax.all.*
+import cats.effect.kernel.MonadCancelThrow
+import com.sbboakye.engine.domain.CustomTypes.{PipelineId, ScheduleId}
+import com.sbboakye.engine.repositories.schedule.SchedulesRepository
+import com.sbboakye.engine.repositories.stage.StagesRepository
 import doobie.Read
 import doobie.generic.auto.*
 import doobie.postgres.*
@@ -13,11 +18,22 @@ case class Pipeline(
     name: String,
     description: Option[String],
     stages: Seq[Stage],
-    schedule: Option[Schedule],
+    scheduleId: Option[ScheduleId],
     status: PipelineStatus,
     createdAt: OffsetDateTime,
     updatedAt: OffsetDateTime
-)
+) {
+  def getSchedule[F[_]: MonadCancelThrow](using
+      repository: SchedulesRepository[F]
+  ): F[Either[String, Schedule]] =
+    scheduleId.fold(MonadCancelThrow[F].pure(Left("No schedule is associated with this pipeline")))(
+      id =>
+        repository.findById(id).map {
+          case Some(schedule) => Right(schedule)
+          case None           => Left(s"Schedule with ID $id not found")
+        }
+    )
+}
 
 object Pipeline:
   given Read[Pipeline] = Read[
@@ -25,7 +41,7 @@ object Pipeline:
         PipelineId,
         String,
         Option[String],
-        Option[Schedule],
+        Option[ScheduleId],
         PipelineStatus,
         OffsetDateTime,
         OffsetDateTime
@@ -36,7 +52,7 @@ object Pipeline:
             id,
             name,
             description,
-            schedule,
+            scheduleId,
             status,
             createdAt,
             updatedAt
@@ -46,9 +62,14 @@ object Pipeline:
           name,
           description,
           Seq.empty[Stage],
-          schedule,
+          scheduleId,
           status,
           createdAt,
           updatedAt
         )
     }
+
+  def loadStages[F[_]](listOfIds: List[PipelineId])(using
+      stagesRepository: StagesRepository[F]
+  ): F[Seq[Stage]] =
+    stagesRepository.findAllByPipelineIds(listOfIds)

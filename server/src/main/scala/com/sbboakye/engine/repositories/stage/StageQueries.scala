@@ -27,7 +27,7 @@ object StageQueries extends HasCommonAttributes:
 
   def insert(stage: Stage): Fragment =
     fr"""INSERT INTO ${Fragment.const(tableName)} (pipeline_id, stage_type, configuration, position)
-           VALUES (${stage.pipelineID}, ${stage.stageType}::stage_type, ${stage.configuration}::jsonb, ${stage.position})"""
+           VALUES (${stage.pipelineId}, ${stage.stageType}::stage_type, ${stage.configuration}::jsonb, ${stage.position})"""
 
   def update(id: UUID, stage: Stage): Fragment =
     fr"""UPDATE ${Fragment.const(tableName)}
