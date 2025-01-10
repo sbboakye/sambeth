@@ -4,6 +4,8 @@ lazy val scala3Version = "3.6.1"
 
 lazy val sbboakye = "com.sbboakye"
 
+scalacOptions ++= Seq("-Xlog-implicits")
+
 lazy val scalatestVersion    = "3.2.19"
 lazy val circeVersion        = "0.14.10"
 lazy val doobieVersion       = "1.0.0-RC6"
@@ -19,7 +21,7 @@ lazy val root = (project in file("server"))
       "org.typelevel"         %% "cats-core"                       % "2.12.0",
       "org.typelevel"         %% "cats-effect"                     % "3.5.7",
       "org.typelevel"         %% "log4cats-slf4j"                  % "2.7.0",
-      "ch.qos.logback"         % "logback-classic"                 % "1.5.15",
+      "ch.qos.logback"         % "logback-classic"                 % "1.5.16",
       "com.github.pureconfig" %% "pureconfig-generic-scala3"       % "0.17.8",
       "org.tpolecat"          %% "doobie-core"                     % "1.0.0-RC6",
       "com.cronutils"          % "cron-utils"                      % "9.2.1",
