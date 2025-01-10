@@ -7,9 +7,11 @@ import com.sbboakye.engine.config.{AppConfig, Database}
 import pureconfig.ConfigSource
 import com.sbboakye.engine.config.syntax.*
 import com.sbboakye.engine.domain.CustomTypes.StageId
-import com.sbboakye.engine.domain.{Connector, ConnectorType, Pipeline, Stage}
+import com.sbboakye.engine.domain.{Connector, ConnectorType, Execution, ExecutionLog, Pipeline, Stage}
 import com.sbboakye.engine.repositories.connector.ConnectorsRepository
 import com.sbboakye.engine.repositories.core.Core
+import com.sbboakye.engine.repositories.execution.ExecutionsRepository
+import com.sbboakye.engine.repositories.executionLog.ExecutionLogsRepository
 import com.sbboakye.engine.repositories.pipeline.PipelinesRepository
 import com.sbboakye.engine.repositories.stage.StagesRepository
 import doobie.*
@@ -27,9 +29,11 @@ object Application extends IOApp.Simple:
   import com.sbboakye.engine.repositories.core.DBFieldMappingsMeta.given
 
   given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
-  given core2: Core[IO, Stage] with     {}
-  given core1: Core[IO, Connector] with {}
-  given core3: Core[IO, Pipeline] with  {}
+  given core2: Core[IO, Stage] with        {}
+  given core1: Core[IO, Connector] with    {}
+  given core3: Core[IO, Pipeline] with     {}
+  given core4: Core[IO, ExecutionLog] with {}
+  given core5: Core[IO, Execution] with    {}
 
   val connector1: Connector = Connector(
     java.util.UUID.randomUUID(),
@@ -48,13 +52,19 @@ object Application extends IOApp.Simple:
           .makeDbResource[IO](dbConfig)
           .use { xa =>
             given transactor: Transactor[IO] = xa
-            ConnectorsRepository[IO].use { cRepo =>
-              given s: ConnectorsRepository[IO] = cRepo
-              StagesRepository[IO].use { repo =>
+            ExecutionLogsRepository[IO].use { cRepo =>
+              given ExecutionLogsRepository[IO] = cRepo
+              ExecutionsRepository[IO].use { repo =>
                 repo.findAll(0, 10)
-                //              repo.findById(UUID.fromString("22222222-2222-2222-2222-222222222222"))
               }
             }
+//            ConnectorsRepository[IO].use { cRepo =>
+//              given s: ConnectorsRepository[IO] = cRepo
+//              StagesRepository[IO].use { repo =>
+//                repo.findAll(0, 10)
+//                //              repo.findById(UUID.fromString("22222222-2222-2222-2222-222222222222"))
+//              }
+//            }
 //            ConnectorsRepository[IO].use { repo =>
 //              repo.findAll(0, 10)
 ////              repo.create(connector1)

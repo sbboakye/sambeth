@@ -5,7 +5,9 @@ import cats.data.NonEmptyChain
 import com.sbboakye.engine.domain.{
   Connector,
   DomainValidation,
+  Execution,
   ExecutionLog,
+  ExecutionStatus,
   InvalidCronExpression,
   InvalidTimezone,
   Pipeline,
@@ -13,6 +15,7 @@ import com.sbboakye.engine.domain.{
   Stage
 }
 import com.sbboakye.engine.domain.ConnectorType.{API, Database}
+import com.sbboakye.engine.domain.ExecutionStatus.{Failed, Running}
 import com.sbboakye.engine.domain.LogLevel.Info
 import com.sbboakye.engine.domain.StageType.Source
 import com.sbboakye.engine.domain.PipelineStatus.Draft
@@ -35,6 +38,7 @@ trait CoreFixture:
   val updateConnectorName: String = "Updated name"
   val updateStageConfiguration: Map[String, String] = Map("source" -> "sink")
   val updatePipelineDescription: Option[String]     = Some("Updated Description")
+  val updateExecutionStatus: ExecutionStatus        = Running
 
   val validCronExpression: String       = "0 0 12 * * ?"
   val validUpdateCronExpression: String = "0 0 11 * * ?"
@@ -114,6 +118,17 @@ trait CoreFixture:
     OffsetDateTime.now(),
     "Some was written to the logs",
     Info,
+    OffsetDateTime.now()
+  )
+
+  val execution: Execution = Execution(
+    executionId1,
+    pipelineId1,
+    OffsetDateTime.now(),
+    None,
+    Running,
+    Seq(executionLog),
+    OffsetDateTime.now(),
     OffsetDateTime.now()
   )
 

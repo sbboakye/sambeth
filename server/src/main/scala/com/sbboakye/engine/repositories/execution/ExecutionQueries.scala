@@ -23,7 +23,7 @@ object ExecutionQueries extends HasCommonAttributes:
         created_at,
         updated_at
     FROM
-        ${Fragment.const(tableName)} e
+        ${Fragment.const(tableName)}
     """
 
   def insert(execution: Execution): Fragment =

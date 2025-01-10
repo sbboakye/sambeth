@@ -30,7 +30,7 @@ class ExecutionLogsRepository[F[_]: MonadCancelThrow: Logger] private (using
   def delete(id: UUID): F[Option[Int]] = core.delete(ExecutionLogQueries.delete(id))
 
   def findAllByExecutionIds(ids: List[ExecutionId]): F[Seq[ExecutionLog]] =
-    (ExecutionLogQueries.select ++ ExecutionLogQueries.whereIn("pipeline_id", ids))
+    (ExecutionLogQueries.select ++ ExecutionLogQueries.whereIn("execution_id", ids))
       .query[ExecutionLog]
       .to[Seq]
       .transact(xa)

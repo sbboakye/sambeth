@@ -12,12 +12,11 @@ import org.typelevel.log4cats.Logger
 import java.time.OffsetDateTime
 import java.util.UUID
 
-class ExecutionsRepository[F[_]: MonadCancelThrow: Logger: Parallel] private (using
+class ExecutionsRepository[F[_]: MonadCancelThrow: Logger] private (using
     xa: Transactor[F],
     core: Core[F, Execution],
     executionLogsRepository: ExecutionLogsRepository[F]
 ):
-  import com.sbboakye.engine.repositories.core.DBFieldMappingsMeta.given
 
   private def enrichExecutionsWithLogs(
       executions: Seq[Execution],
@@ -60,7 +59,7 @@ class ExecutionsRepository[F[_]: MonadCancelThrow: Logger: Parallel] private (us
   def delete(id: UUID): F[Option[Int]] = core.delete(ExecutionQueries.delete(id))
 
 object ExecutionsRepository:
-  def apply[F[_]: Async: Logger: Parallel](using
+  def apply[F[_]: Async: Logger](using
       xa: Transactor[F],
       core: Core[F, Execution],
       executionLogsRepository: ExecutionLogsRepository[F]
