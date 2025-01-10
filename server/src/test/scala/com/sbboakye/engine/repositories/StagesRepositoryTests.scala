@@ -48,7 +48,7 @@ class StagesRepositoryTests
   "StagesRepository" - {
     "findAll" - {
       "should return an empty list when no stages exist" in {
-        withDependencies { (repo, xa) =>
+        withDependencies { (repo, _) =>
           repo.findAll(0, 10).asserting(_ shouldBe empty)
         }
       }
@@ -68,7 +68,7 @@ class StagesRepositoryTests
 
     "findById" - {
       "should return None if the stage does not exist" in {
-        withDependencies { (repo, xa) =>
+        withDependencies { (repo, _) =>
           repo.findById(nonExistentId).asserting(_ shouldBe None)
         }
       }
@@ -138,7 +138,7 @@ class StagesRepositoryTests
       }
 
       "should return None if stage does not exist" in {
-        withDependencies { (repo, xa) =>
+        withDependencies { (repo, _) =>
           repo.delete(nonExistentId).asserting(_ shouldBe None)
         }
       }

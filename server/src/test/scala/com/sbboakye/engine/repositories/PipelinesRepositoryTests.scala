@@ -53,7 +53,7 @@ class PipelinesRepositoryTests
   "PipelinesRepository" - {
     "findAll" - {
       "should return an empty list when no pipelines exist" in {
-        withDependencies { (repo, xa) =>
+        withDependencies { (repo, _) =>
           repo.findAll(0, 10).asserting(_ shouldBe empty)
         }
       }
@@ -73,7 +73,7 @@ class PipelinesRepositoryTests
 
     "findById" - {
       "should return None if the pipeline does not exist" in {
-        withDependencies { (repo, xa) =>
+        withDependencies { (repo, _) =>
           val result = repo.findById(nonExistentId)
           result.asserting(_ shouldBe None)
         }
@@ -144,7 +144,7 @@ class PipelinesRepositoryTests
       }
 
       "should return None if pipeline does not exist" in {
-        withDependencies { (repo, xa) =>
+        withDependencies { (repo, _) =>
           val result = repo.delete(nonExistentId)
           result.asserting(_ shouldBe None)
         }

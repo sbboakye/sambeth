@@ -107,15 +107,15 @@ trait CoreFixture:
     OffsetDateTime.now()
   )
 
-//  val executionLog: ExecutionLog = ExecutionLog(
-//    executionLogId,
-//    executionId1,
-//    stageId1,
-//    OffsetDateTime.now(),
-//    "Some was written to the logs",
-//    Info,
-//    OffsetDateTime.now()
-//  )
+  val executionLog: ExecutionLog = ExecutionLog(
+    executionLogId,
+    executionId1,
+    stageId1,
+    OffsetDateTime.now(),
+    "Some was written to the logs",
+    Info,
+    OffsetDateTime.now()
+  )
 
   given Eq[DomainValidation] = Eq.fromUniversalEquals
 

@@ -45,16 +45,17 @@ class ConnectorsRepositoryTests
   "ConnectorsRepository" - {
     "findAll" - {
       "should return an empty list when no connectors exist" in {
-        withDependencies { (repo, xa) =>
+        withDependencies { (repo, _) =>
           repo.findAll(0, 10).asserting(_ shouldBe empty)
         }
       }
 
       "should return a list of connectors when connectors exist" in {
         withDependencies { (repo, xa) =>
+          given Transactor[IO] = xa
           val result = for {
-            -           <- executeSqlScript(additionSQLScript1)(using xa)
-            -           <- executeSqlScript(additionSQLScript2)(using xa)
+            -           <- executeSqlScript(additionSQLScript1)
+            -           <- executeSqlScript(additionSQLScript2)
             _           <- repo.create(connector1)
             _           <- repo.create(connector2)
             queryResult <- repo.findAll(0, 10)
@@ -66,7 +67,7 @@ class ConnectorsRepositoryTests
 
     "findById" - {
       "should return None if the connector does not exist" in {
-        withDependencies { (repo, xa) =>
+        withDependencies { (repo, _) =>
           val result = repo.findById(nonExistentId)
           result.asserting(_ shouldBe None)
         }
@@ -74,9 +75,10 @@ class ConnectorsRepositoryTests
 
       "should return the correct connector if the connector exists" in {
         withDependencies { (repo, xa) =>
+          given Transactor[IO] = xa
           val result = for {
-            -           <- executeSqlScript(additionSQLScript1)(using xa)
-            -           <- executeSqlScript(additionSQLScript2)(using xa)
+            -           <- executeSqlScript(additionSQLScript1)
+            -           <- executeSqlScript(additionSQLScript2)
             uuid        <- repo.create(connector1)
             queryResult <- repo.findById(uuid)
           } yield (queryResult, uuid)
@@ -90,9 +92,10 @@ class ConnectorsRepositoryTests
     "create" - {
       "should create a new connector and return its id" in {
         withDependencies { (repo, xa) =>
+          given Transactor[IO] = xa
           val result = for {
-            -           <- executeSqlScript(additionSQLScript1)(using xa)
-            -           <- executeSqlScript(additionSQLScript2)(using xa)
+            -           <- executeSqlScript(additionSQLScript1)
+            -           <- executeSqlScript(additionSQLScript2)
             queryResult <- repo.create(connector1)
           } yield queryResult
           result.asserting(_ should not be null)
@@ -103,9 +106,10 @@ class ConnectorsRepositoryTests
     "update" - {
       "should update an existing connector" in {
         withDependencies { (repo, xa) =>
+          given Transactor[IO] = xa
           val result = for {
-            -  <- executeSqlScript(additionSQLScript1)(using xa)
-            -  <- executeSqlScript(additionSQLScript2)(using xa)
+            -  <- executeSqlScript(additionSQLScript1)
+            -  <- executeSqlScript(additionSQLScript2)
             id <- repo.create(connector1)
             updatedConnectorObject <- connector1
               .copy(name = updateConnectorName)
@@ -118,9 +122,10 @@ class ConnectorsRepositoryTests
 
       "should return None if connector does not exist" in {
         withDependencies { (repo, xa) =>
+          given Transactor[IO] = xa
           val result = for {
-            -           <- executeSqlScript(additionSQLScript1)(using xa)
-            -           <- executeSqlScript(additionSQLScript2)(using xa)
+            -           <- executeSqlScript(additionSQLScript1)
+            -           <- executeSqlScript(additionSQLScript2)
             queryResult <- repo.update(nonExistentId, connector1)
           } yield queryResult
           result.asserting(_ shouldBe None)
@@ -131,9 +136,10 @@ class ConnectorsRepositoryTests
     "delete" - {
       "should delete an existing connector" in {
         withDependencies { (repo, xa) =>
+          given Transactor[IO] = xa
           val result = for {
-            -            <- executeSqlScript(additionSQLScript1)(using xa)
-            -            <- executeSqlScript(additionSQLScript2)(using xa)
+            -            <- executeSqlScript(additionSQLScript1)
+            -            <- executeSqlScript(additionSQLScript2)
             id           <- repo.create(connector1)
             deleteResult <- repo.delete(id)
           } yield deleteResult
@@ -142,7 +148,7 @@ class ConnectorsRepositoryTests
       }
 
       "should return None if connector does not exist" in {
-        withDependencies { (repo, xa) =>
+        withDependencies { (repo, _) =>
           val result = repo.delete(nonExistentId)
           result.asserting(_ shouldBe None)
         }
@@ -152,9 +158,10 @@ class ConnectorsRepositoryTests
     "Edge Cases: Concurrent Transactions" - {
       "should handle concurrent inserts without data loss" in {
         withDependencies { (repo, xa) =>
+          given Transactor[IO] = xa
           val results = for {
-            -                <- executeSqlScript(additionSQLScript1)(using xa)
-            -                <- executeSqlScript(additionSQLScript2)(using xa)
+            -                <- executeSqlScript(additionSQLScript1)
+            -                <- executeSqlScript(additionSQLScript2)
             randomConnectors <- List.fill(10)(connector1.copy(id = UUID.randomUUID())).pure[IO]
             inserts <- randomConnectors.parTraverse(randomConnector => repo.create(randomConnector))
             connectors <- repo.findAll(0, 20)
@@ -166,9 +173,10 @@ class ConnectorsRepositoryTests
 
       "should handle concurrent updates correctly" in {
         withDependencies { (repo, xa) =>
+          given Transactor[IO] = xa
           val results = for {
-            -           <- executeSqlScript(additionSQLScript1)(using xa)
-            -           <- executeSqlScript(additionSQLScript2)(using xa)
+            -           <- executeSqlScript(additionSQLScript1)
+            -           <- executeSqlScript(additionSQLScript2)
             connectorId <- repo.create(connector1)
             connectors <- List
               .fill(10)(
@@ -187,9 +195,10 @@ class ConnectorsRepositoryTests
     "Edge Cases: Large Dataset" - {
       "should handle large number of records in findAll" in {
         withDependencies { (repo, xa) =>
+          given Transactor[IO] = xa
           val results = for {
-            - <- executeSqlScript(additionSQLScript1)(using xa)
-            - <- executeSqlScript(additionSQLScript2)(using xa)
+            - <- executeSqlScript(additionSQLScript1)
+            - <- executeSqlScript(additionSQLScript2)
             randomConnectors <- List
               .fill(1000)(connector1.copy(id = UUID.randomUUID()))
               .pure[IO]
