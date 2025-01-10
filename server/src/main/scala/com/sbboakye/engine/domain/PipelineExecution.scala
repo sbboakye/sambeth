@@ -4,9 +4,6 @@ import com.sbboakye.engine.domain.CustomTypes.{ExecutionId, PipelineId}
 import com.sbboakye.engine.repositories.executionLog.ExecutionLogsRepository
 import com.sbboakye.engine.repositories.pipeline.PipelinesRepository
 import doobie.Read
-import doobie.implicits.*
-import doobie.util.meta.*
-import doobie.generic.auto.*
 import doobie.postgres.*
 import doobie.postgres.implicits.*
 

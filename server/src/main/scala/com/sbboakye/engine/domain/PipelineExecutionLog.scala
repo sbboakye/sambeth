@@ -3,11 +3,11 @@ package com.sbboakye.engine.domain
 import com.sbboakye.engine.domain.CustomTypes.{ExecutionId, ExecutionLogId, StageId}
 import com.sbboakye.engine.repositories.execution.ExecutionsRepository
 import com.sbboakye.engine.repositories.stage.StagesRepository
-import doobie.Read
+import doobie.postgres.implicits.*
 
 import java.time.OffsetDateTime
 
-case class ExecutionLog(
+case class PipelineExecutionLog(
     id: ExecutionLogId,
     executionId: ExecutionId,
     stageId: StageId,

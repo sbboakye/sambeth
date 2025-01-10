@@ -3,7 +3,7 @@ package com.sbboakye.engine.repositories.execution
 import cats.*
 import cats.effect.*
 import cats.syntax.all.*
-import com.sbboakye.engine.domain.{Execution, ExecutionLog, ExecutionStatus}
+import com.sbboakye.engine.domain.{PipelineExecution, PipelineExecutionLog, ExecutionStatus}
 import com.sbboakye.engine.repositories.core.Core
 import com.sbboakye.engine.repositories.executionLog.ExecutionLogsRepository
 import doobie.*
@@ -14,54 +14,57 @@ import java.util.UUID
 
 class ExecutionsRepository[F[_]: MonadCancelThrow: Logger] private (using
     xa: Transactor[F],
-    core: Core[F, Execution],
+    core: Core[F, PipelineExecution],
     executionLogsRepository: ExecutionLogsRepository[F]
 ):
 
   private def enrichExecutionsWithLogs(
-      executions: Seq[Execution],
-      logs: Seq[ExecutionLog]
-  ): Seq[Execution] =
+      executions: Seq[PipelineExecution],
+      logs: Seq[PipelineExecutionLog]
+  ): Seq[PipelineExecution] =
     val logsByExecutionId = logs.groupBy(_.executionId)
     executions.map(execution =>
-      execution.copy(logs = logsByExecutionId.getOrElse(execution.id, Seq.empty[ExecutionLog]))
+      execution.copy(logs =
+        logsByExecutionId.getOrElse(execution.id, Seq.empty[PipelineExecutionLog])
+      )
     )
 
   def findAll(
       offset: Int,
       limit: Int
-  ): F[Seq[Execution]] =
+  ): F[Seq[PipelineExecution]] =
     for {
       executions <- core.findAll(
-        ExecutionQueries.select,
+        PipelineExecutionQueries.select,
         offset,
         limit,
-        ExecutionQueries.limitAndOffset
+        PipelineExecutionQueries.limitAndOffset
       )
       executionIds   <- executions.map(_.id).toList.pure[F]
-      logsExecutions <- Execution.loadExecutionLogs(executionIds)
+      logsExecutions <- PipelineExecution.loadExecutionLogs(executionIds)
     } yield enrichExecutionsWithLogs(executions, logsExecutions)
 
-  def findById(id: UUID): F[Option[Execution]] =
+  def findById(id: UUID): F[Option[PipelineExecution]] =
     for {
-      executionOpt <- core.findByID(ExecutionQueries.select, ExecutionQueries.where(id = id))
+      executionOpt <- core.findByID(PipelineExecutionQueries.select, PipelineExecutionQueries.where(id = id))
       logs <- executionOpt match {
-        case Some(execution) => Execution.loadExecutionLogs(List(execution.id))
-        case None            => MonadCancelThrow[F].pure(Seq.empty[ExecutionLog])
+        case Some(execution) => PipelineExecution.loadExecutionLogs(List(execution.id))
+        case None            => MonadCancelThrow[F].pure(Seq.empty[PipelineExecutionLog])
       }
     } yield executionOpt.map(execution => enrichExecutionsWithLogs(Seq(execution), logs).head)
 
-  def create(pipeline: Execution): F[UUID] = core.create(ExecutionQueries.insert(pipeline))
+  def create(execution: PipelineExecution): F[UUID] =
+    core.create(PipelineExecutionQueries.insert(execution))
 
-  def update(id: UUID, pipeline: Execution): F[Option[Int]] =
-    core.update(ExecutionQueries.update(id, pipeline))
+  def update(id: UUID, execution: PipelineExecution): F[Option[Int]] =
+    core.update(PipelineExecutionQueries.update(id, execution))
 
-  def delete(id: UUID): F[Option[Int]] = core.delete(ExecutionQueries.delete(id))
+  def delete(id: UUID): F[Option[Int]] = core.delete(PipelineExecutionQueries.delete(id))
 
 object ExecutionsRepository:
   def apply[F[_]: Async: Logger](using
       xa: Transactor[F],
-      core: Core[F, Execution],
+      core: Core[F, PipelineExecution],
       executionLogsRepository: ExecutionLogsRepository[F]
   ): Resource[F, ExecutionsRepository[F]] =
     Resource.eval(Async[F].pure(new ExecutionsRepository[F]))

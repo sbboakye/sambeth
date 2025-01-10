@@ -4,7 +4,7 @@ import cats.*
 import cats.effect.*
 import cats.syntax.all.*
 import cats.effect.testing.scalatest.AsyncIOSpec
-import com.sbboakye.engine.domain.{Execution, ExecutionLog}
+import com.sbboakye.engine.domain.{PipelineExecution, PipelineExecutionLog}
 import com.sbboakye.engine.fixtures.CoreFixture
 import com.sbboakye.engine.repositories.core.Core
 import com.sbboakye.engine.repositories.execution.ExecutionsRepository
@@ -20,7 +20,7 @@ import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 import java.util.UUID
 
-class ExecutionsRepositoryTests
+class PipelineExecutionsRepositoryTests
     extends AsyncFreeSpec
     with AsyncIOSpec
     with Matchers
@@ -31,8 +31,8 @@ class ExecutionsRepositoryTests
   val additionSQLScript: String      = "pipelines.sql"
 
   given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
-  given Core[IO, Execution] with    {}
-  given Core[IO, ExecutionLog] with {}
+  given Core[IO, PipelineExecutionLog] with {}
+  given Core[IO, PipelineExecution] with    {}
 
   def withDependencies[T](test: (ExecutionsRepository[IO], Transactor[IO]) => IO[T]): IO[T] =
     coreSpecTransactor.use { xa =>

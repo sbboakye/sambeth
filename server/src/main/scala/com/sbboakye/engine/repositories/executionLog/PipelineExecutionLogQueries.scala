@@ -1,13 +1,13 @@
 package com.sbboakye.engine.repositories.executionLog
 
-import com.sbboakye.engine.domain.ExecutionLog
+import com.sbboakye.engine.domain.PipelineExecutionLog
 import com.sbboakye.engine.repositories.core.HasCommonAttributes
 import doobie.*
 import doobie.implicits.*
 import doobie.postgres.*
 import doobie.postgres.implicits.*
 
-object ExecutionLogQueries extends HasCommonAttributes:
+object PipelineExecutionLogQueries extends HasCommonAttributes:
   override val tableName: String = "execution_logs"
 
   val select: Fragment =
@@ -24,7 +24,7 @@ object ExecutionLogQueries extends HasCommonAttributes:
           ${Fragment.const(tableName)}
     """
 
-  def insert(log: ExecutionLog): Fragment =
+  def insert(log: PipelineExecutionLog): Fragment =
     fr"""INSERT INTO ${Fragment.const(
         tableName
       )} (execution_id, stage_id, timestamp, message, log_level, created_at)
