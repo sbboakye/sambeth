@@ -2,7 +2,7 @@ package com.sbboakye.engine.domain
 
 import com.sbboakye.engine.domain.CustomTypes.{ExecutionId, PipelineId}
 import com.sbboakye.engine.repositories.executionLog.PipelineExecutionLogsRepository
-import com.sbboakye.engine.repositories.pipeline.PipelinesRepository
+import com.sbboakye.engine.repositories.pipeline.{PipelinesRepository, StagesHelper}
 import doobie.Read
 import doobie.postgres.*
 import doobie.postgres.implicits.*
@@ -10,19 +10,19 @@ import doobie.postgres.implicits.*
 import java.time.OffsetDateTime
 
 case class PipelineExecution(
-                              id: ExecutionId,
-                              pipelineId: PipelineId,
-                              startTime: OffsetDateTime,
-                              endTime: Option[OffsetDateTime],
-                              status: ExecutionStatus,
-                              logs: Seq[PipelineExecutionLog],
-                              createdAt: OffsetDateTime,
-                              updatedAt: OffsetDateTime
+    id: ExecutionId,
+    pipelineId: PipelineId,
+    startTime: OffsetDateTime,
+    endTime: Option[OffsetDateTime],
+    status: ExecutionStatus,
+    logs: Seq[PipelineExecutionLog],
+    createdAt: OffsetDateTime,
+    updatedAt: OffsetDateTime
 ) {
   def getPipeline[F[_]](using
       repository: PipelinesRepository[F]
-  ): F[Option[Pipeline]] =
-    repository.findById(pipelineId)
+  )(using helper: StagesHelper[F]): F[Option[Pipeline]] =
+    repository.findById(pipelineId, helper)
 }
 
 object PipelineExecution:

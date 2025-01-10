@@ -23,18 +23,17 @@ import java.util.UUID
 
 class PipelinesRepository[F[_]: MonadCancelThrow: Logger](using
     xa: Transactor[F],
-    core: Core[F, Pipeline],
-    stagesRepository: StagesRepository[F]
+    core: Core[F, Pipeline]
 ) extends PipelineMetadataRepository[F]:
 
-  private def enrichPipelinesWithStages(
-      pipelines: Seq[Pipeline],
-      stages: Seq[Stage]
-  ): Seq[Pipeline] =
-    val pipelinesByStageId = stages.groupBy(_.pipelineId)
-    pipelines.map(pipeline =>
-      pipeline.copy(stages = pipelinesByStageId.getOrElse(pipeline.id, Seq.empty[Stage]))
-    )
+//  private def enrichPipelinesWithStages(
+//      pipelines: Seq[Pipeline],
+//      stages: Seq[Stage]
+//  ): Seq[Pipeline] =
+//    val pipelinesByStageId = stages.groupBy(_.pipelineId)
+//    pipelines.map(pipeline =>
+//      pipeline.copy(stages = pipelinesByStageId.getOrElse(pipeline.id, Seq.empty[Stage]))
+//    )
 
   override def findMetadataById(id: PipelineId): F[Option[PipelineMetadata]] =
     (PipelineQueries.select ++ PipelineQueries.where(id = id))
@@ -44,8 +43,10 @@ class PipelinesRepository[F[_]: MonadCancelThrow: Logger](using
 
   def findAll(
       offset: Int,
-      limit: Int
+      limit: Int,
+      helper: StagesHelper[F]
   ): F[Seq[Pipeline]] =
+
     for {
       pipelines <- core.findAll(
         PipelineQueries.select,
@@ -53,18 +54,17 @@ class PipelinesRepository[F[_]: MonadCancelThrow: Logger](using
         limit,
         PipelineQueries.limitAndOffset
       )
-      pipelineIds     <- pipelines.map(_.id).toList.pure[F]
-      stagesPipelines <- Pipeline.loadStages(pipelineIds)
-    } yield enrichPipelinesWithStages(pipelines, stagesPipelines)
+      enrichPipelines <- helper.enrichPipelinesWithStages(pipelines)
+    } yield enrichPipelines
 
-  def findById(id: UUID): F[Option[Pipeline]] =
+  def findById(id: UUID, helper: StagesHelper[F]): F[Option[Pipeline]] =
     for {
       pipelineOpt <- core.findByID(PipelineQueries.select, PipelineQueries.where(id = id))
-      stages <- pipelineOpt match {
-        case Some(pipeline) => Pipeline.loadStages(List(pipeline.id))
-        case None           => MonadCancelThrow[F].pure(Seq.empty[Stage])
+      enrichedPipeline <- pipelineOpt match {
+        case Some(pipeline) => helper.enrichPipelinesWithStages(Seq(pipeline)).map(_.headOption)
+        case None           => MonadCancelThrow[F].pure(None)
       }
-    } yield pipelineOpt.map(pipeline => enrichPipelinesWithStages(Seq(pipeline), stages).head)
+    } yield enrichedPipeline
 
   def create(pipeline: Pipeline): F[UUID] = core.create(PipelineQueries.insert(pipeline))
 
@@ -76,7 +76,6 @@ class PipelinesRepository[F[_]: MonadCancelThrow: Logger](using
 object PipelinesRepository:
   def apply[F[_]: MonadCancelThrow: Logger](using
       xa: Transactor[F],
-      core: Core[F, Pipeline],
-      stagesRepository: StagesRepository[F]
+      core: Core[F, Pipeline]
   ): Resource[F, PipelinesRepository[F]] =
     Resource.eval(MonadCancelThrow[F].pure(new PipelinesRepository[F]))

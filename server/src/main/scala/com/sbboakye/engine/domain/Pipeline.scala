@@ -69,7 +69,7 @@ object Pipeline:
         )
     }
 
-  def loadStages[F[_]](listOfIds: List[PipelineId])(using
-      stagesRepository: StagesRepository[F]
-  ): F[Seq[Stage]] =
-    stagesRepository.findAllByPipelineIds(listOfIds)
+//  def loadStages[F[_]](listOfIds: List[PipelineId])(using
+//      stagesRepository: StagesRepository[F]
+//  ): F[Seq[Stage]] =
+//    stagesRepository.findAllByPipelineIds(listOfIds)
