@@ -7,7 +7,7 @@ import cats.effect.testing.scalatest.AsyncIOSpec
 import com.sbboakye.engine.domain.PipelineExecutionLog
 import com.sbboakye.engine.fixtures.CoreFixture
 import com.sbboakye.engine.repositories.core.Core
-import com.sbboakye.engine.repositories.executionLog.ExecutionLogsRepository
+import com.sbboakye.engine.repositories.executionLog.PipelineExecutionLogsRepository
 import doobie.*
 import doobie.implicits.*
 import doobie.postgres.*
@@ -34,15 +34,17 @@ class PipelineExecutionLogsRepositoryTests
   given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
   given Core[IO, PipelineExecutionLog] with {}
 
-  def withDependencies[T](test: (ExecutionLogsRepository[IO], Transactor[IO]) => IO[T]): IO[T] =
+  def withDependencies[T](
+      test: (PipelineExecutionLogsRepository[IO], Transactor[IO]) => IO[T]
+  ): IO[T] =
     coreSpecTransactor.use { xa =>
       given Transactor[IO] = xa
-      ExecutionLogsRepository[IO].use { repo =>
+      PipelineExecutionLogsRepository[IO].use { repo =>
         test(repo, xa)
       }
     }
 
-  "ExecutionLogsRepository" - {
+  "PipelineExecutionLogsRepository" - {
     "findAll" - {
       "should return an empty list when no execution logs exist" in {
         withDependencies { (repo, _) =>

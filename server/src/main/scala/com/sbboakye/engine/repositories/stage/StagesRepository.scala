@@ -9,9 +9,6 @@ import com.sbboakye.engine.repositories.connector.ConnectorsRepository
 import com.sbboakye.engine.repositories.core.Core
 import doobie.*
 import doobie.implicits.*
-import doobie.generic.auto.*
-import doobie.postgres.*
-import doobie.postgres.implicits.*
 
 import org.typelevel.log4cats.Logger
 

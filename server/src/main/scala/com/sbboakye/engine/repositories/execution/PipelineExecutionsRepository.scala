@@ -5,17 +5,17 @@ import cats.effect.*
 import cats.syntax.all.*
 import com.sbboakye.engine.domain.{PipelineExecution, PipelineExecutionLog, ExecutionStatus}
 import com.sbboakye.engine.repositories.core.Core
-import com.sbboakye.engine.repositories.executionLog.ExecutionLogsRepository
+import com.sbboakye.engine.repositories.executionLog.PipelineExecutionLogsRepository
 import doobie.*
 import org.typelevel.log4cats.Logger
 
 import java.time.OffsetDateTime
 import java.util.UUID
 
-class ExecutionsRepository[F[_]: MonadCancelThrow: Logger] private (using
+class PipelineExecutionsRepository[F[_]: MonadCancelThrow: Logger] private (using
     xa: Transactor[F],
     core: Core[F, PipelineExecution],
-    executionLogsRepository: ExecutionLogsRepository[F]
+    executionLogsRepository: PipelineExecutionLogsRepository[F]
 ):
 
   private def enrichExecutionsWithLogs(
@@ -46,7 +46,10 @@ class ExecutionsRepository[F[_]: MonadCancelThrow: Logger] private (using
 
   def findById(id: UUID): F[Option[PipelineExecution]] =
     for {
-      executionOpt <- core.findByID(PipelineExecutionQueries.select, PipelineExecutionQueries.where(id = id))
+      executionOpt <- core.findByID(
+        PipelineExecutionQueries.select,
+        PipelineExecutionQueries.where(id = id)
+      )
       logs <- executionOpt match {
         case Some(execution) => PipelineExecution.loadExecutionLogs(List(execution.id))
         case None            => MonadCancelThrow[F].pure(Seq.empty[PipelineExecutionLog])
@@ -61,10 +64,10 @@ class ExecutionsRepository[F[_]: MonadCancelThrow: Logger] private (using
 
   def delete(id: UUID): F[Option[Int]] = core.delete(PipelineExecutionQueries.delete(id))
 
-object ExecutionsRepository:
+object PipelineExecutionsRepository:
   def apply[F[_]: Async: Logger](using
       xa: Transactor[F],
       core: Core[F, PipelineExecution],
-      executionLogsRepository: ExecutionLogsRepository[F]
-  ): Resource[F, ExecutionsRepository[F]] =
-    Resource.eval(Async[F].pure(new ExecutionsRepository[F]))
+      executionLogsRepository: PipelineExecutionLogsRepository[F]
+  ): Resource[F, PipelineExecutionsRepository[F]] =
+    Resource.eval(Async[F].pure(new PipelineExecutionsRepository[F]))

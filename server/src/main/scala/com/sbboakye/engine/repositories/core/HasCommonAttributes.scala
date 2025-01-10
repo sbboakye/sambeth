@@ -1,7 +1,6 @@
 package com.sbboakye.engine.repositories.core
 
 import cats.*
-import cats.syntax.all.*
 import cats.implicits.*
 import doobie.*
 import doobie.implicits.*

@@ -4,7 +4,7 @@ lazy val scala3Version = "3.6.1"
 
 lazy val sbboakye = "com.sbboakye"
 
-scalacOptions ++= Seq("-Xlog-implicits")
+scalacOptions ++= Seq("-Xlog-implicits", "-explain")
 
 lazy val scalatestVersion    = "3.2.19"
 lazy val circeVersion        = "0.14.10"
@@ -13,7 +13,8 @@ lazy val scalaTestContainers = "0.41.5"
 
 lazy val root = (project in file("server"))
   .settings(
-    name         := "server",
+    name := "server",
+//    scalacOptions ++= Seq("-Xlog-implicits", "-explain"),
     scalaVersion := scala3Version,
     organization := sbboakye,
     Test / unmanagedResourceDirectories += baseDirectory.value / "extra-resources",

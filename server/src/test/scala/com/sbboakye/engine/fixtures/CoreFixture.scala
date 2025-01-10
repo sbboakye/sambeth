@@ -5,8 +5,8 @@ import cats.data.NonEmptyChain
 import com.sbboakye.engine.domain.{
   Connector,
   DomainValidation,
-  Execution,
-  ExecutionLog,
+  PipelineExecution,
+  PipelineExecutionLog,
   ExecutionStatus,
   InvalidCronExpression,
   InvalidTimezone,
@@ -111,7 +111,7 @@ trait CoreFixture:
     OffsetDateTime.now()
   )
 
-  val executionLog: ExecutionLog = ExecutionLog(
+  val executionLog: PipelineExecutionLog = PipelineExecutionLog(
     executionLogId,
     executionId1,
     stageId1,
@@ -121,7 +121,7 @@ trait CoreFixture:
     OffsetDateTime.now()
   )
 
-  val execution: Execution = Execution(
+  val execution: PipelineExecution = PipelineExecution(
     executionId1,
     pipelineId1,
     OffsetDateTime.now(),

@@ -12,18 +12,24 @@ import org.typelevel.log4cats.Logger
 
 import java.util.UUID
 
-class ExecutionLogsRepository[F[_]: MonadCancelThrow: Logger] private (using
+class PipelineExecutionLogsRepository[F[_]: MonadCancelThrow: Logger] private (using
     xa: Transactor[F],
     core: Core[F, PipelineExecutionLog]
 ):
 
   def findAll(offset: Int, limit: Int): F[Seq[PipelineExecutionLog]] =
-    core.findAll(PipelineExecutionLogQueries.select, offset, limit, PipelineExecutionLogQueries.limitAndOffset)
+    core.findAll(
+      PipelineExecutionLogQueries.select,
+      offset,
+      limit,
+      PipelineExecutionLogQueries.limitAndOffset
+    )
 
   def findById(id: UUID): F[Option[PipelineExecutionLog]] =
     core.findByID(PipelineExecutionLogQueries.select, PipelineExecutionLogQueries.where(id = id))
 
-  def create(schedule: PipelineExecutionLog): F[UUID] = core.create(PipelineExecutionLogQueries.insert(schedule))
+  def create(schedule: PipelineExecutionLog): F[UUID] =
+    core.create(PipelineExecutionLogQueries.insert(schedule))
 
   def delete(id: UUID): F[Option[Int]] = core.delete(PipelineExecutionLogQueries.delete(id))
 
@@ -33,9 +39,9 @@ class ExecutionLogsRepository[F[_]: MonadCancelThrow: Logger] private (using
       .to[Seq]
       .transact(xa)
 
-object ExecutionLogsRepository:
+object PipelineExecutionLogsRepository:
   def apply[F[_]: Async: Logger](using
       xa: Transactor[F],
       core: Core[F, PipelineExecutionLog]
-  ): Resource[F, ExecutionLogsRepository[F]] =
-    Resource.eval(Async[F].pure(new ExecutionLogsRepository[F]))
+  ): Resource[F, PipelineExecutionLogsRepository[F]] =
+    Resource.eval(Async[F].pure(new PipelineExecutionLogsRepository[F]))

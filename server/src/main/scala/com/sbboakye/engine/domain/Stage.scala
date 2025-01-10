@@ -4,7 +4,6 @@ import com.sbboakye.engine.domain.CustomTypes.{PipelineId, StageConfiguration, S
 import com.sbboakye.engine.repositories.connector.ConnectorsRepository
 import com.sbboakye.engine.repositories.pipeline.PipelinesRepository
 import doobie.Read
-import doobie.generic.auto.*
 import doobie.postgres.*
 import doobie.postgres.implicits.*
 

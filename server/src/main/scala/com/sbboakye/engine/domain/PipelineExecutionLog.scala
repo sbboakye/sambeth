@@ -1,9 +1,8 @@
 package com.sbboakye.engine.domain
 
 import com.sbboakye.engine.domain.CustomTypes.{ExecutionId, ExecutionLogId, StageId}
-import com.sbboakye.engine.repositories.execution.ExecutionsRepository
+import com.sbboakye.engine.repositories.execution.PipelineExecutionsRepository
 import com.sbboakye.engine.repositories.stage.StagesRepository
-import doobie.postgres.implicits.*
 
 import java.time.OffsetDateTime
 
@@ -17,8 +16,8 @@ case class PipelineExecutionLog(
     createdAt: OffsetDateTime
 ) {
   def getExecution[F[_]](using
-      repository: ExecutionsRepository[F]
-  ): F[Option[Execution]] =
+      repository: PipelineExecutionsRepository[F]
+  ): F[Option[PipelineExecution]] =
     repository.findById(executionId)
 
   def getStage[F[_]](using

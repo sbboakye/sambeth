@@ -7,8 +7,6 @@ import com.sbboakye.engine.domain.CustomTypes.StageId
 import com.sbboakye.engine.repositories.core.Core
 import doobie.*
 import doobie.implicits.*
-import doobie.generic.auto.*
-import doobie.postgres.*
 import doobie.postgres.implicits.*
 
 import org.typelevel.log4cats.Logger

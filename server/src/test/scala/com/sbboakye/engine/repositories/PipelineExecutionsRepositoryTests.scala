@@ -7,8 +7,8 @@ import cats.effect.testing.scalatest.AsyncIOSpec
 import com.sbboakye.engine.domain.{PipelineExecution, PipelineExecutionLog}
 import com.sbboakye.engine.fixtures.CoreFixture
 import com.sbboakye.engine.repositories.core.Core
-import com.sbboakye.engine.repositories.execution.ExecutionsRepository
-import com.sbboakye.engine.repositories.executionLog.ExecutionLogsRepository
+import com.sbboakye.engine.repositories.execution.PipelineExecutionsRepository
+import com.sbboakye.engine.repositories.executionLog.PipelineExecutionLogsRepository
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 import doobie.*
@@ -34,12 +34,14 @@ class PipelineExecutionsRepositoryTests
   given Core[IO, PipelineExecutionLog] with {}
   given Core[IO, PipelineExecution] with    {}
 
-  def withDependencies[T](test: (ExecutionsRepository[IO], Transactor[IO]) => IO[T]): IO[T] =
+  def withDependencies[T](
+      test: (PipelineExecutionsRepository[IO], Transactor[IO]) => IO[T]
+  ): IO[T] =
     coreSpecTransactor.use { xa =>
       given Transactor[IO] = xa
-      ExecutionLogsRepository[IO].use { cRepo =>
-        given ExecutionLogsRepository[IO] = cRepo
-        ExecutionsRepository[IO].use { repo =>
+      PipelineExecutionLogsRepository[IO].use { cRepo =>
+        given PipelineExecutionLogsRepository[IO] = cRepo
+        PipelineExecutionsRepository[IO].use { repo =>
           test(repo, xa)
         }
       }

@@ -1,28 +1,20 @@
 package com.sbboakye.engine.repositories.pipeline
 
 import cats.*
-import cats.instances.seq.*
 import cats.effect.*
 import cats.syntax.all.*
-import cats.syntax.parallel.*
-import com.sbboakye.engine.domain.CustomTypes.{PipelineId, PipelineScheduleStageConnectorJoined}
+import com.sbboakye.engine.domain.CustomTypes.PipelineId
 import com.sbboakye.engine.domain.{
-  Connector,
-  ConnectorType,
   Pipeline,
   PipelineMetadata,
   PipelineMetadataRepository,
   PipelineStatus,
-  Schedule,
-  Stage,
-  StageType
+  Stage
 }
 import com.sbboakye.engine.repositories.core.Core
 import com.sbboakye.engine.repositories.stage.StagesRepository
 import doobie.*
 import doobie.implicits.*
-import doobie.generic.auto.*
-import doobie.postgres.*
 import doobie.postgres.implicits.*
 import org.typelevel.log4cats.Logger
 

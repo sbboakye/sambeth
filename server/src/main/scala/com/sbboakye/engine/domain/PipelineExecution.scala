@@ -1,7 +1,7 @@
 package com.sbboakye.engine.domain
 
 import com.sbboakye.engine.domain.CustomTypes.{ExecutionId, PipelineId}
-import com.sbboakye.engine.repositories.executionLog.ExecutionLogsRepository
+import com.sbboakye.engine.repositories.executionLog.PipelineExecutionLogsRepository
 import com.sbboakye.engine.repositories.pipeline.PipelinesRepository
 import doobie.Read
 import doobie.postgres.*
@@ -9,15 +9,15 @@ import doobie.postgres.implicits.*
 
 import java.time.OffsetDateTime
 
-case class Execution(
-    id: ExecutionId,
-    pipelineId: PipelineId,
-    startTime: OffsetDateTime,
-    endTime: Option[OffsetDateTime],
-    status: ExecutionStatus,
-    logs: Seq[ExecutionLog],
-    createdAt: OffsetDateTime,
-    updatedAt: OffsetDateTime
+case class PipelineExecution(
+                              id: ExecutionId,
+                              pipelineId: PipelineId,
+                              startTime: OffsetDateTime,
+                              endTime: Option[OffsetDateTime],
+                              status: ExecutionStatus,
+                              logs: Seq[PipelineExecutionLog],
+                              createdAt: OffsetDateTime,
+                              updatedAt: OffsetDateTime
 ) {
   def getPipeline[F[_]](using
       repository: PipelinesRepository[F]
@@ -25,8 +25,8 @@ case class Execution(
     repository.findById(pipelineId)
 }
 
-object Execution:
-  given Read[Execution] = Read[
+object PipelineExecution:
+  given Read[PipelineExecution] = Read[
     (
         ExecutionId,
         PipelineId,
@@ -47,19 +47,19 @@ object Execution:
             createdAt,
             updatedAt
           ) =>
-        Execution(
+        PipelineExecution(
           id,
           pipelineId,
           startTime,
           endTime,
           status,
-          Seq.empty[ExecutionLog],
+          Seq.empty[PipelineExecutionLog],
           createdAt,
           updatedAt
         )
     }
 
   def loadExecutionLogs[F[_]](listOfIds: List[ExecutionId])(using
-      executionLogsRepository: ExecutionLogsRepository[F]
-  ): F[Seq[ExecutionLog]] =
+      executionLogsRepository: PipelineExecutionLogsRepository[F]
+  ): F[Seq[PipelineExecutionLog]] =
     executionLogsRepository.findAllByExecutionIds(listOfIds)
