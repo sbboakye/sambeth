@@ -10,11 +10,11 @@ lazy val scalatestVersion    = "3.2.19"
 lazy val circeVersion        = "0.14.10"
 lazy val doobieVersion       = "1.0.0-RC6"
 lazy val scalaTestContainers = "0.41.5"
+lazy val http4sVersion       = "0.23.30"
 
 lazy val root = (project in file("server"))
   .settings(
-    name := "server",
-//    scalacOptions ++= Seq("-Xlog-implicits", "-explain"),
+    name         := "server",
     scalaVersion := scala3Version,
     organization := sbboakye,
     Test / unmanagedResourceDirectories += baseDirectory.value / "extra-resources",
@@ -29,13 +29,18 @@ lazy val root = (project in file("server"))
       "org.tpolecat"          %% "doobie-hikari"                   % doobieVersion,
       "org.tpolecat"          %% "doobie-postgres"                 % doobieVersion,
       "org.tpolecat"          %% "doobie-postgres-circe"           % doobieVersion,
-      "org.tpolecat"          %% "doobie-specs2"                   % doobieVersion       % "test",
-      "org.tpolecat"          %% "doobie-scalatest"                % doobieVersion       % "test",
+      "org.http4s"            %% "http4s-ember-client"             % http4sVersion,
+      "org.http4s"            %% "http4s-ember-server"             % http4sVersion,
+      "org.http4s"            %% "http4s-dsl"                      % http4sVersion,
+      "org.http4s"            %% "http4s-circe"                    % http4sVersion,
       "io.circe"              %% "circe-core"                      % circeVersion,
       "io.circe"              %% "circe-generic"                   % circeVersion,
+      "io.circe"              %% "circe-literal"                   % circeVersion,
       "io.circe"              %% "circe-parser"                    % circeVersion,
-      "org.postgresql"         % "postgresql"                      % "42.7.4",
+      "org.postgresql"         % "postgresql"                      % "42.7.5",
       "org.scalactic"         %% "scalactic"                       % scalatestVersion,
+      "org.tpolecat"          %% "doobie-specs2"                   % doobieVersion       % "test",
+      "org.tpolecat"          %% "doobie-scalatest"                % doobieVersion       % "test",
       "org.scalatest"         %% "scalatest"                       % scalatestVersion    % "test",
       "com.dimafeng"          %% "testcontainers-scala-postgresql" % scalaTestContainers % Test,
       "com.dimafeng"          %% "testcontainers-scala-scalatest"  % scalaTestContainers % Test,
