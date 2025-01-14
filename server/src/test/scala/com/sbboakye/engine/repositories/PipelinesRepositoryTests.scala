@@ -31,15 +31,14 @@ class PipelinesRepositoryTests
   override val initSqlString: String = "sql/postgres.sql"
   val additionSQLScript: String      = "schedules.sql"
 
-  given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
-  given Core[IO, Pipeline] with  {}
-  given Core[IO, Stage] with     {}
-  given Core[IO, Connector] with {}
-
   def withDependencies[T](
       test: (PipelinesRepository[IO], Transactor[IO], StagesHelper[IO]) => IO[T]
   ): IO[T] =
     coreSpecTransactor.use { xa =>
+      given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
+      given Core[IO, Pipeline] with  {}
+      given Core[IO, Stage] with     {}
+      given Core[IO, Connector] with {}
       given Transactor[IO] = xa
       ConnectorsRepository[IO].use { cRepo =>
         given ConnectorsRepository[IO] = cRepo

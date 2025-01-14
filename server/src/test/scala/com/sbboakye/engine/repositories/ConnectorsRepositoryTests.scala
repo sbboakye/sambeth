@@ -30,12 +30,11 @@ class ConnectorsRepositoryTests
   val additionSQLScript1: String     = "pipelines.sql"
   val additionSQLScript2: String     = "stages.sql"
 
-  import com.sbboakye.engine.repositories.core.DBFieldMappingsMeta.given
-  given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
-  given Core[IO, Connector] with {}
-
   def withDependencies[T](test: (ConnectorsRepository[IO], Transactor[IO]) => IO[T]): IO[T] =
     coreSpecTransactor.use { xa =>
+      import com.sbboakye.engine.repositories.core.DBFieldMappingsMeta.given
+      given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
+      given Core[IO, Connector] with {}
       given Transactor[IO] = xa
       ConnectorsRepository[IO].use { repo =>
         test(repo, xa)

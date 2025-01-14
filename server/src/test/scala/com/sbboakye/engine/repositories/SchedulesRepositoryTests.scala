@@ -28,11 +28,10 @@ class SchedulesRepositoryTests
 
   override val initSqlString: String = "sql/postgres.sql"
 
-  given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
-  given Core[IO, Schedule] with {}
-
   def withDependencies[T](test: (SchedulesRepository[IO], Transactor[IO]) => IO[T]): IO[T] =
     coreSpecTransactor.use { xa =>
+      given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
+      given Core[IO, Schedule] with {}
       given Transactor[IO] = xa
       SchedulesRepository[IO].use { repo =>
         test(repo, xa)

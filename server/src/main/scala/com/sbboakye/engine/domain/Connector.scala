@@ -1,7 +1,6 @@
 package com.sbboakye.engine.domain
 
 import com.sbboakye.engine.domain.CustomTypes.{ConnectorConfiguration, ConnectorId, StageId}
-import com.sbboakye.engine.repositories.connector.ConnectorsRepository
 import com.sbboakye.engine.repositories.stage.{ConnectorsHelper, StagesRepository}
 import doobie.postgres.implicits.*
 

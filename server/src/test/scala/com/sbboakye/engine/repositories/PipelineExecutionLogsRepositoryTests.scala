@@ -31,13 +31,12 @@ class PipelineExecutionLogsRepositoryTests
   val additionSQLScript2: String     = "stages.sql"
   val additionSQLScript3: String     = "executions.sql"
 
-  given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
-  given Core[IO, PipelineExecutionLog] with {}
-
   def withDependencies[T](
       test: (PipelineExecutionLogsRepository[IO], Transactor[IO]) => IO[T]
   ): IO[T] =
     coreSpecTransactor.use { xa =>
+      given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
+      given Core[IO, PipelineExecutionLog] with {}
       given Transactor[IO] = xa
       PipelineExecutionLogsRepository[IO].use { repo =>
         test(repo, xa)
