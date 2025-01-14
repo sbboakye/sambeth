@@ -8,7 +8,7 @@ import com.sbboakye.engine.domain.{Connector, Stage}
 import com.sbboakye.engine.fixtures.CoreFixture
 import com.sbboakye.engine.repositories.connector.ConnectorsRepository
 import com.sbboakye.engine.repositories.core.Core
-import com.sbboakye.engine.repositories.stage.StagesRepository
+import com.sbboakye.engine.repositories.stage.{ConnectorsHelper, StagesRepository}
 import doobie.*
 import doobie.implicits.*
 import doobie.postgres.*
@@ -34,13 +34,16 @@ class StagesRepositoryTests
   given Core[IO, Stage] with     {}
   given Core[IO, Connector] with {}
 
-  def withDependencies[T](test: (StagesRepository[IO], Transactor[IO]) => IO[T]): IO[T] =
+  def withDependencies[T](
+      test: (StagesRepository[IO], Transactor[IO], ConnectorsHelper[IO]) => IO[T]
+  ): IO[T] =
     coreSpecTransactor.use { xa =>
       given Transactor[IO] = xa
       ConnectorsRepository[IO].use { cRepo =>
-        given ConnectorsRepository[IO] = cRepo
+        given ConnectorsRepository[IO]             = cRepo
+        val connectorsHelper: ConnectorsHelper[IO] = ConnectorsHelper[IO]
         StagesRepository[IO].use { repo =>
-          test(repo, xa)
+          test(repo, xa, connectorsHelper)
         }
       }
     }
@@ -48,18 +51,18 @@ class StagesRepositoryTests
   "StagesRepository" - {
     "findAll" - {
       "should return an empty list when no stages exist" in {
-        withDependencies { (repo, _) =>
-          repo.findAll(0, 10).asserting(_ shouldBe empty)
+        withDependencies { (repo, _, helper) =>
+          repo.findAll(0, 10, helper).asserting(_ shouldBe empty)
         }
       }
 
       "should return a list of stages when stages exist" in {
-        withDependencies { (repo, xa) =>
+        withDependencies { (repo, xa, helper) =>
           val result = for {
             -           <- executeSqlScript(additionSQLScript)(using xa)
             _           <- repo.create(stage1)
             _           <- repo.create(stage2)
-            queryResult <- repo.findAll(0, 10)
+            queryResult <- repo.findAll(0, 10, helper)
           } yield queryResult
           result.asserting(_ should not be empty)
         }
@@ -68,17 +71,17 @@ class StagesRepositoryTests
 
     "findById" - {
       "should return None if the stage does not exist" in {
-        withDependencies { (repo, _) =>
-          repo.findById(nonExistentId).asserting(_ shouldBe None)
+        withDependencies { (repo, _, helper) =>
+          repo.findById(nonExistentId, helper).asserting(_ shouldBe None)
         }
       }
 
       "should return the correct stage if the stage exists" in {
-        withDependencies { (repo, xa) =>
+        withDependencies { (repo, xa, helper) =>
           val result = for {
             -           <- executeSqlScript(additionSQLScript)(using xa)
             uuid        <- repo.create(stage1)
-            queryResult <- repo.findById(uuid)
+            queryResult <- repo.findById(uuid, helper)
           } yield (queryResult, uuid)
           result.asserting((queryResult, uuid) => {
             queryResult.get.id shouldBe uuid
@@ -89,7 +92,7 @@ class StagesRepositoryTests
 
     "create" - {
       "should create a new stage and return its id" in {
-        withDependencies { (repo, xa) =>
+        withDependencies { (repo, xa, _) =>
           val result = for {
             -           <- executeSqlScript(additionSQLScript)(using xa)
             queryResult <- repo.create(stage1)
@@ -101,7 +104,7 @@ class StagesRepositoryTests
 
     "update" - {
       "should update an existing stage" in {
-        withDependencies { (repo, xa) =>
+        withDependencies { (repo, xa, _) =>
           val result = for {
             -  <- executeSqlScript(additionSQLScript)(using xa)
             id <- repo.create(stage1)
@@ -115,7 +118,7 @@ class StagesRepositoryTests
       }
 
       "should return None if stage does not exist" in {
-        withDependencies { (repo, xa) =>
+        withDependencies { (repo, xa, _) =>
           val result = for {
             -           <- executeSqlScript(additionSQLScript)(using xa)
             queryResult <- repo.update(nonExistentId, stage1)
@@ -127,7 +130,7 @@ class StagesRepositoryTests
 
     "delete" - {
       "should delete an existing stage" in {
-        withDependencies { (repo, xa) =>
+        withDependencies { (repo, xa, _) =>
           val result = for {
             -            <- executeSqlScript(additionSQLScript)(using xa)
             id           <- repo.create(stage1)
@@ -138,7 +141,7 @@ class StagesRepositoryTests
       }
 
       "should return None if stage does not exist" in {
-        withDependencies { (repo, _) =>
+        withDependencies { (repo, _, _) =>
           repo.delete(nonExistentId).asserting(_ shouldBe None)
         }
       }
@@ -146,12 +149,12 @@ class StagesRepositoryTests
 
     "Edge Cases: Concurrent Transactions" - {
       "should handle concurrent inserts without data loss" in {
-        withDependencies { (repo, xa) =>
+        withDependencies { (repo, xa, helper) =>
           val results = for {
             -            <- executeSqlScript(additionSQLScript)(using xa)
             randomStages <- List.fill(10)(stage1.copy(id = UUID.randomUUID())).pure[IO]
             inserts      <- randomStages.parTraverse(randomStage => repo.create(randomStage))
-            stages       <- repo.findAll(0, 20)
+            stages       <- repo.findAll(0, 20, helper)
           } yield (inserts, stages)
           results.asserting(_._1.size shouldBe 10)
           results.asserting(_._2.size shouldBe 10)
@@ -159,7 +162,7 @@ class StagesRepositoryTests
       }
 
       "should handle concurrent updates correctly" in {
-        withDependencies { (repo, xa) =>
+        withDependencies { (repo, xa, helper) =>
           val results = for {
             -       <- executeSqlScript(additionSQLScript)(using xa)
             stageId <- repo.create(stage1)
@@ -169,7 +172,7 @@ class StagesRepositoryTests
               )
               .pure[IO]
             updates      <- stages.parTraverse(stage => repo.update(stageId, stage))
-            fetchedStage <- repo.findById(stageId)
+            fetchedStage <- repo.findById(stageId, helper)
           } yield (updates, fetchedStage)
           results.asserting(_._1.flatMap(_.toList).reduceLeftOption(_ + _) shouldBe Option(10))
           results.asserting(_._2.get.configuration shouldBe updateStageConfiguration)
@@ -179,14 +182,14 @@ class StagesRepositoryTests
 
     "Edge Cases: Large Dataset" - {
       "should handle large number of records in findAll" in {
-        withDependencies { (repo, xa) =>
+        withDependencies { (repo, xa, helper) =>
           val result = for {
             - <- executeSqlScript(additionSQLScript)(using xa)
             randomStages <- List
               .fill(1000)(stage1.copy(id = UUID.randomUUID()))
               .pure[IO]
             inserts <- randomStages.parTraverse(stage => repo.create(stage))
-            stages  <- repo.findAll(0, 1000)
+            stages  <- repo.findAll(0, 1000, helper)
           } yield stages
           result.asserting(_.size shouldBe 1000)
         }

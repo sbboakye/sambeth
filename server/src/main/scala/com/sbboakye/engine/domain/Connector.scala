@@ -2,7 +2,7 @@ package com.sbboakye.engine.domain
 
 import com.sbboakye.engine.domain.CustomTypes.{ConnectorConfiguration, ConnectorId, StageId}
 import com.sbboakye.engine.repositories.connector.ConnectorsRepository
-import com.sbboakye.engine.repositories.stage.StagesRepository
+import com.sbboakye.engine.repositories.stage.{ConnectorsHelper, StagesRepository}
 import doobie.postgres.implicits.*
 
 import java.time.OffsetDateTime
@@ -16,9 +16,8 @@ case class Connector(
     createdAt: OffsetDateTime,
     updatedAt: OffsetDateTime
 ) {
-  def getStage[F[_]](using
-      repository: StagesRepository[F],
-      connectorRepository: ConnectorsRepository[F]
+  def getStage[F[_]](helper: ConnectorsHelper[F])(using
+      repository: StagesRepository[F]
   ): F[Option[Stage]] =
-    repository.findById(stageId)
+    repository.findById(stageId, helper)
 }

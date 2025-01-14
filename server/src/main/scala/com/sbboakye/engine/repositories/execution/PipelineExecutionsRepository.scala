@@ -14,24 +14,13 @@ import java.util.UUID
 
 class PipelineExecutionsRepository[F[_]: MonadCancelThrow: Logger] private (using
     xa: Transactor[F],
-    core: Core[F, PipelineExecution],
-    executionLogsRepository: PipelineExecutionLogsRepository[F]
+    core: Core[F, PipelineExecution]
 ):
-
-  private def enrichExecutionsWithLogs(
-      executions: Seq[PipelineExecution],
-      logs: Seq[PipelineExecutionLog]
-  ): Seq[PipelineExecution] =
-    val logsByExecutionId = logs.groupBy(_.executionId)
-    executions.map(execution =>
-      execution.copy(logs =
-        logsByExecutionId.getOrElse(execution.id, Seq.empty[PipelineExecutionLog])
-      )
-    )
 
   def findAll(
       offset: Int,
-      limit: Int
+      limit: Int,
+      helper: PipelineExecutionLogsHelper[F]
   ): F[Seq[PipelineExecution]] =
     for {
       executions <- core.findAll(
@@ -40,21 +29,20 @@ class PipelineExecutionsRepository[F[_]: MonadCancelThrow: Logger] private (usin
         limit,
         PipelineExecutionQueries.limitAndOffset
       )
-      executionIds   <- executions.map(_.id).toList.pure[F]
-      logsExecutions <- PipelineExecution.loadExecutionLogs(executionIds)
-    } yield enrichExecutionsWithLogs(executions, logsExecutions)
+      enrichExecutions <- helper.enrichExecutionsWithLogs(executions)
+    } yield enrichExecutions
 
-  def findById(id: UUID): F[Option[PipelineExecution]] =
+  def findById(id: UUID, helper: PipelineExecutionLogsHelper[F]): F[Option[PipelineExecution]] =
     for {
       executionOpt <- core.findByID(
         PipelineExecutionQueries.select,
         PipelineExecutionQueries.where(id = id)
       )
-      logs <- executionOpt match {
-        case Some(execution) => PipelineExecution.loadExecutionLogs(List(execution.id))
-        case None            => MonadCancelThrow[F].pure(Seq.empty[PipelineExecutionLog])
+      enrichExecution <- executionOpt match {
+        case Some(execution) => helper.enrichExecutionsWithLogs(Seq(execution)).map(_.headOption)
+        case None            => MonadCancelThrow[F].pure(None)
       }
-    } yield executionOpt.map(execution => enrichExecutionsWithLogs(Seq(execution), logs).head)
+    } yield enrichExecution
 
   def create(execution: PipelineExecution): F[UUID] =
     core.create(PipelineExecutionQueries.insert(execution))

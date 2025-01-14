@@ -5,7 +5,6 @@ import cats.syntax.all.*
 import cats.effect.kernel.MonadCancelThrow
 import com.sbboakye.engine.domain.CustomTypes.{PipelineId, ScheduleId}
 import com.sbboakye.engine.repositories.schedule.SchedulesRepository
-import com.sbboakye.engine.repositories.stage.StagesRepository
 import doobie.Read
 import doobie.generic.auto.*
 import doobie.postgres.*
@@ -68,8 +67,3 @@ object Pipeline:
           updatedAt
         )
     }
-
-//  def loadStages[F[_]](listOfIds: List[PipelineId])(using
-//      stagesRepository: StagesRepository[F]
-//  ): F[Seq[Stage]] =
-//    stagesRepository.findAllByPipelineIds(listOfIds)

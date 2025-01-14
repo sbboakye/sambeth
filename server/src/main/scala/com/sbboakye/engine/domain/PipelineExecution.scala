@@ -58,8 +58,3 @@ object PipelineExecution:
           updatedAt
         )
     }
-
-  def loadExecutionLogs[F[_]](listOfIds: List[ExecutionId])(using
-      executionLogsRepository: PipelineExecutionLogsRepository[F]
-  ): F[Seq[PipelineExecutionLog]] =
-    executionLogsRepository.findAllByExecutionIds(listOfIds)

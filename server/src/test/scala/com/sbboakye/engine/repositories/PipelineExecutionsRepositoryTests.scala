@@ -7,7 +7,10 @@ import cats.effect.testing.scalatest.AsyncIOSpec
 import com.sbboakye.engine.domain.{PipelineExecution, PipelineExecutionLog}
 import com.sbboakye.engine.fixtures.CoreFixture
 import com.sbboakye.engine.repositories.core.Core
-import com.sbboakye.engine.repositories.execution.PipelineExecutionsRepository
+import com.sbboakye.engine.repositories.execution.{
+  PipelineExecutionLogsHelper,
+  PipelineExecutionsRepository
+}
 import com.sbboakye.engine.repositories.executionLog.PipelineExecutionLogsRepository
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
@@ -35,14 +38,19 @@ class PipelineExecutionsRepositoryTests
   given Core[IO, PipelineExecution] with    {}
 
   def withDependencies[T](
-      test: (PipelineExecutionsRepository[IO], Transactor[IO]) => IO[T]
+      test: (
+          PipelineExecutionsRepository[IO],
+          Transactor[IO],
+          PipelineExecutionLogsHelper[IO]
+      ) => IO[T]
   ): IO[T] =
     coreSpecTransactor.use { xa =>
       given Transactor[IO] = xa
       PipelineExecutionLogsRepository[IO].use { cRepo =>
-        given PipelineExecutionLogsRepository[IO] = cRepo
+        given PipelineExecutionLogsRepository[IO]   = cRepo
+        val helper: PipelineExecutionLogsHelper[IO] = PipelineExecutionLogsHelper[IO]
         PipelineExecutionsRepository[IO].use { repo =>
-          test(repo, xa)
+          test(repo, xa, helper)
         }
       }
     }
@@ -50,17 +58,17 @@ class PipelineExecutionsRepositoryTests
   "ExecutionsRepository" - {
     "findAll" - {
       "should return an empty list when no executions exist" in {
-        withDependencies { (repo, _) =>
-          repo.findAll(0, 10).asserting(_ shouldBe empty)
+        withDependencies { (repo, _, helper) =>
+          repo.findAll(0, 10, helper).asserting(_ shouldBe empty)
         }
       }
 
       "should return a list of executions when executions exist" in {
-        withDependencies { (repo, xa) =>
+        withDependencies { (repo, xa, helper) =>
           val result = for {
             -           <- executeSqlScript(additionSQLScript)(using xa)
             _           <- repo.create(execution)
-            queryResult <- repo.findAll(0, 10)
+            queryResult <- repo.findAll(0, 10, helper)
           } yield queryResult
           result.asserting(_ should not be empty)
         }
@@ -69,17 +77,17 @@ class PipelineExecutionsRepositoryTests
 
     "findById" - {
       "should return None if the execution does not exist" in {
-        withDependencies { (repo, _) =>
-          repo.findById(nonExistentId).asserting(_ shouldBe None)
+        withDependencies { (repo, _, helper) =>
+          repo.findById(nonExistentId, helper).asserting(_ shouldBe None)
         }
       }
 
       "should return the correct execution if the execution exists" in {
-        withDependencies { (repo, xa) =>
+        withDependencies { (repo, xa, helper) =>
           val result = for {
             -           <- executeSqlScript(additionSQLScript)(using xa)
             uuid        <- repo.create(execution)
-            queryResult <- repo.findById(uuid)
+            queryResult <- repo.findById(uuid, helper)
           } yield (queryResult, uuid)
           result.asserting((queryResult, uuid) => {
             queryResult.get.id shouldBe uuid
@@ -90,7 +98,7 @@ class PipelineExecutionsRepositoryTests
 
     "create" - {
       "should create a new execution and return its id" in {
-        withDependencies { (repo, xa) =>
+        withDependencies { (repo, xa, _) =>
           val result = for {
             -           <- executeSqlScript(additionSQLScript)(using xa)
             queryResult <- repo.create(execution)
@@ -102,7 +110,7 @@ class PipelineExecutionsRepositoryTests
 
     "update" - {
       "should update an existing execution" in {
-        withDependencies { (repo, xa) =>
+        withDependencies { (repo, xa, _) =>
           val result = for {
             -  <- executeSqlScript(additionSQLScript)(using xa)
             id <- repo.create(execution)
@@ -116,7 +124,7 @@ class PipelineExecutionsRepositoryTests
       }
 
       "should return None if execution does not exist" in {
-        withDependencies { (repo, xa) =>
+        withDependencies { (repo, xa, _) =>
           val result = for {
             -           <- executeSqlScript(additionSQLScript)(using xa)
             queryResult <- repo.update(nonExistentId, execution)
@@ -128,7 +136,7 @@ class PipelineExecutionsRepositoryTests
 
     "delete" - {
       "should delete an existing execution" in {
-        withDependencies { (repo, xa) =>
+        withDependencies { (repo, xa, _) =>
           val result = for {
             -            <- executeSqlScript(additionSQLScript)(using xa)
             id           <- repo.create(execution)
@@ -139,7 +147,7 @@ class PipelineExecutionsRepositoryTests
       }
 
       "should return None if execution does not exist" in {
-        withDependencies { (repo, _) =>
+        withDependencies { (repo, _, _) =>
           repo.delete(nonExistentId).asserting(_ shouldBe None)
         }
       }
@@ -147,12 +155,12 @@ class PipelineExecutionsRepositoryTests
 
     "Edge Cases: Concurrent Transactions" - {
       "should handle concurrent inserts without data loss" in {
-        withDependencies { (repo, xa) =>
+        withDependencies { (repo, xa, helper) =>
           val results = for {
             -                <- executeSqlScript(additionSQLScript)(using xa)
             randomExecutions <- List.fill(10)(execution.copy(id = UUID.randomUUID())).pure[IO]
             inserts <- randomExecutions.parTraverse(randomExecution => repo.create(randomExecution))
-            executions <- repo.findAll(0, 20)
+            executions <- repo.findAll(0, 20, helper)
           } yield (inserts, executions)
           results.asserting(_._1.size shouldBe 10)
           results.asserting(_._2.size shouldBe 10)
@@ -160,7 +168,7 @@ class PipelineExecutionsRepositoryTests
       }
 
       "should handle concurrent updates correctly" in {
-        withDependencies { (repo, xa) =>
+        withDependencies { (repo, xa, helper) =>
           val results = for {
             -           <- executeSqlScript(additionSQLScript)(using xa)
             executionId <- repo.create(execution)
@@ -170,7 +178,7 @@ class PipelineExecutionsRepositoryTests
               )
               .pure[IO]
             updates <- executions.parTraverse(execution => repo.update(executionId, execution))
-            fetchedExecution <- repo.findById(executionId)
+            fetchedExecution <- repo.findById(executionId, helper)
           } yield (updates, fetchedExecution)
           results.asserting(_._1.flatMap(_.toList).reduceLeftOption(_ + _) shouldBe Option(10))
           results.asserting(_._2.get.status shouldBe updateExecutionStatus)
@@ -180,14 +188,14 @@ class PipelineExecutionsRepositoryTests
 
     "Edge Cases: Large Dataset" - {
       "should handle large number of records in findAll" in {
-        withDependencies { (repo, xa) =>
+        withDependencies { (repo, xa, helper) =>
           val result = for {
             - <- executeSqlScript(additionSQLScript)(using xa)
             randomExecutions <- List
               .fill(1000)(execution.copy(id = UUID.randomUUID()))
               .pure[IO]
             inserts    <- randomExecutions.parTraverse(execution => repo.create(execution))
-            executions <- repo.findAll(0, 1000)
+            executions <- repo.findAll(0, 1000, helper)
           } yield executions
           result.asserting(_.size shouldBe 1000)
         }

@@ -8,11 +8,9 @@ import com.sbboakye.engine.domain.{
   Pipeline,
   PipelineMetadata,
   PipelineMetadataRepository,
-  PipelineStatus,
-  Stage
+  PipelineStatus
 }
 import com.sbboakye.engine.repositories.core.Core
-import com.sbboakye.engine.repositories.stage.StagesRepository
 import doobie.*
 import doobie.implicits.*
 import doobie.postgres.implicits.*
@@ -25,15 +23,6 @@ class PipelinesRepository[F[_]: MonadCancelThrow: Logger](using
     xa: Transactor[F],
     core: Core[F, Pipeline]
 ) extends PipelineMetadataRepository[F]:
-
-//  private def enrichPipelinesWithStages(
-//      pipelines: Seq[Pipeline],
-//      stages: Seq[Stage]
-//  ): Seq[Pipeline] =
-//    val pipelinesByStageId = stages.groupBy(_.pipelineId)
-//    pipelines.map(pipeline =>
-//      pipeline.copy(stages = pipelinesByStageId.getOrElse(pipeline.id, Seq.empty[Stage]))
-//    )
 
   override def findMetadataById(id: PipelineId): F[Option[PipelineMetadata]] =
     (PipelineQueries.select ++ PipelineQueries.where(id = id))
@@ -60,11 +49,11 @@ class PipelinesRepository[F[_]: MonadCancelThrow: Logger](using
   def findById(id: UUID, helper: StagesHelper[F]): F[Option[Pipeline]] =
     for {
       pipelineOpt <- core.findByID(PipelineQueries.select, PipelineQueries.where(id = id))
-      enrichedPipeline <- pipelineOpt match {
+      enrichPipeline <- pipelineOpt match {
         case Some(pipeline) => helper.enrichPipelinesWithStages(Seq(pipeline)).map(_.headOption)
         case None           => MonadCancelThrow[F].pure(None)
       }
-    } yield enrichedPipeline
+    } yield enrichPipeline
 
   def create(pipeline: Pipeline): F[UUID] = core.create(PipelineQueries.insert(pipeline))
 

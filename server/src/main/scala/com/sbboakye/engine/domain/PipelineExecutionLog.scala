@@ -1,8 +1,11 @@
 package com.sbboakye.engine.domain
 
 import com.sbboakye.engine.domain.CustomTypes.{ExecutionId, ExecutionLogId, StageId}
-import com.sbboakye.engine.repositories.execution.PipelineExecutionsRepository
-import com.sbboakye.engine.repositories.stage.StagesRepository
+import com.sbboakye.engine.repositories.execution.{
+  PipelineExecutionLogsHelper,
+  PipelineExecutionsRepository
+}
+import com.sbboakye.engine.repositories.stage.{ConnectorsHelper, StagesRepository}
 
 import java.time.OffsetDateTime
 
@@ -15,13 +18,13 @@ case class PipelineExecutionLog(
     logLevel: LogLevel,
     createdAt: OffsetDateTime
 ) {
-  def getExecution[F[_]](using
+  def getExecution[F[_]](helper: PipelineExecutionLogsHelper[F])(using
       repository: PipelineExecutionsRepository[F]
   ): F[Option[PipelineExecution]] =
-    repository.findById(executionId)
+    repository.findById(executionId, helper)
 
-  def getStage[F[_]](using
+  def getStage[F[_]](helper: ConnectorsHelper[F])(using
       repository: StagesRepository[F]
   ): F[Option[Stage]] =
-    repository.findById(stageId)
+    repository.findById(stageId, helper)
 }

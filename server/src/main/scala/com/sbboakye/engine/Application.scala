@@ -10,14 +10,17 @@ import com.sbboakye.engine.domain.CustomTypes.StageId
 import com.sbboakye.engine.domain.{
   Connector,
   ConnectorType,
+  Pipeline,
   PipelineExecution,
   PipelineExecutionLog,
-  Pipeline,
   Stage
 }
 import com.sbboakye.engine.repositories.connector.ConnectorsRepository
 import com.sbboakye.engine.repositories.core.Core
-import com.sbboakye.engine.repositories.execution.PipelineExecutionsRepository
+import com.sbboakye.engine.repositories.execution.{
+  PipelineExecutionLogsHelper,
+  PipelineExecutionsRepository
+}
 import com.sbboakye.engine.repositories.executionLog.PipelineExecutionLogsRepository
 import com.sbboakye.engine.repositories.pipeline.PipelinesRepository
 import com.sbboakye.engine.repositories.stage.StagesRepository
@@ -59,9 +62,10 @@ object Application extends IOApp.Simple:
           .use { xa =>
             given transactor: Transactor[IO] = xa
             PipelineExecutionLogsRepository[IO].use { cRepo =>
-              given PipelineExecutionLogsRepository[IO] = cRepo
+              given PipelineExecutionLogsRepository[IO]   = cRepo
+              val helper: PipelineExecutionLogsHelper[IO] = PipelineExecutionLogsHelper[IO]
               PipelineExecutionsRepository[IO].use { repo =>
-                repo.findAll(0, 10)
+                repo.findAll(0, 10, helper)
               }
             }
 //            ConnectorsRepository[IO].use { cRepo =>

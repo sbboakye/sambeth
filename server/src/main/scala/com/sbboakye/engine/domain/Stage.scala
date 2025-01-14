@@ -1,7 +1,6 @@
 package com.sbboakye.engine.domain
 
 import com.sbboakye.engine.domain.CustomTypes.{PipelineId, StageConfiguration, StageId}
-import com.sbboakye.engine.repositories.connector.ConnectorsRepository
 import com.sbboakye.engine.repositories.pipeline.PipelinesRepository
 import doobie.Read
 import doobie.postgres.*
@@ -61,8 +60,3 @@ object Stage:
             updatedAt
           )
       }
-
-  def loadConnectors[F[_]](listOfIds: List[StageId])(using
-      connectorRepository: ConnectorsRepository[F]
-  ): F[Seq[Connector]] =
-    connectorRepository.findAllByStageIds(listOfIds)

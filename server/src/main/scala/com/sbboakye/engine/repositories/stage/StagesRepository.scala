@@ -16,37 +16,27 @@ import java.util.UUID
 
 class StagesRepository[F[_]: MonadCancelThrow: Logger](using
     xa: Transactor[F],
-    core: Core[F, Stage],
-    connectorsRepository: ConnectorsRepository[F]
+    core: Core[F, Stage]
 ):
-
-  private def enrichStagesWithConnectors(
-      stages: Seq[Stage],
-      connectors: Seq[Connector]
-  ): Seq[Stage] =
-    val connectorsByStageId = connectors.groupBy(_.stageId)
-    stages.map(stage =>
-      stage.copy(connectors = connectorsByStageId.getOrElse(stage.id, Seq.empty[Connector]))
-    )
 
   def findAll(
       offset: Int,
-      limit: Int
+      limit: Int,
+      helper: ConnectorsHelper[F]
   ): F[Seq[Stage]] =
     for {
-      stages   <- core.findAll(StageQueries.select, offset, limit, StageQueries.limitAndOffset)
-      stageIds <- stages.map(_.id).toList.pure[F]
-      connectorsStages <- Stage.loadConnectors(stageIds)
-    } yield enrichStagesWithConnectors(stages, connectorsStages)
+      stages       <- core.findAll(StageQueries.select, offset, limit, StageQueries.limitAndOffset)
+      enrichStages <- helper.enrichStagesWithConnectors(stages)
+    } yield enrichStages
 
-  def findById(id: StageId): F[Option[Stage]] =
+  def findById(id: StageId, helper: ConnectorsHelper[F]): F[Option[Stage]] =
     for {
       stageOpt <- core.findByID(StageQueries.select, StageQueries.where(id = id))
-      connectors <- stageOpt match {
-        case Some(stage) => Stage.loadConnectors(List(stage.id))
-        case None        => MonadCancelThrow[F].pure(Seq.empty[Connector])
+      enrichStage <- stageOpt match {
+        case Some(stage) => helper.enrichStagesWithConnectors(Seq(stage)).map(_.headOption)
+        case None        => MonadCancelThrow[F].pure(None)
       }
-    } yield stageOpt.map(stage => enrichStagesWithConnectors(Seq(stage), connectors).head)
+    } yield enrichStage
 
   def create(pipeline: Stage): F[UUID] = core.create(StageQueries.insert(pipeline))
 
