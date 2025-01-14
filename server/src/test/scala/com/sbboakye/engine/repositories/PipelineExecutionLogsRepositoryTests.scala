@@ -6,16 +6,15 @@ import cats.syntax.all.*
 import cats.effect.testing.scalatest.AsyncIOSpec
 import com.sbboakye.engine.domain.PipelineExecutionLog
 import com.sbboakye.engine.fixtures.CoreFixture
-import com.sbboakye.engine.repositories.core.Core
 import com.sbboakye.engine.repositories.executionLog.PipelineExecutionLogsRepository
 import doobie.*
-import doobie.implicits.*
-import doobie.postgres.*
-import doobie.postgres.implicits.*
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
-import org.typelevel.log4cats.Logger
-import org.typelevel.log4cats.slf4j.Slf4jLogger
+import com.sbboakye.engine.contexts.RepositoryContext.{
+  NoHelper,
+  pipelineExecutionLogsRepositorySetup
+}
+import org.scalatest.Assertion
 
 import java.util.UUID
 
@@ -31,28 +30,16 @@ class PipelineExecutionLogsRepositoryTests
   val additionSQLScript2: String     = "stages.sql"
   val additionSQLScript3: String     = "executions.sql"
 
-  def withDependencies[T](
-      test: (PipelineExecutionLogsRepository[IO], Transactor[IO]) => IO[T]
-  ): IO[T] =
-    coreSpecTransactor.use { xa =>
-      given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
-      given Core[IO, PipelineExecutionLog] with {}
-      given Transactor[IO] = xa
-      PipelineExecutionLogsRepository[IO].use { repo =>
-        test(repo, xa)
-      }
-    }
-
   "PipelineExecutionLogsRepository" - {
     "findAll" - {
       "should return an empty list when no execution logs exist" in {
-        withDependencies { (repo, _) =>
+        withDependencies[PipelineExecutionLogsRepository, NoHelper, Assertion] { (repo, _, _) =>
           repo.findAll(0, 10).asserting(_ shouldBe empty)
         }
       }
 
       "should return a list of execution logs when execution log exist" in {
-        withDependencies { (repo, xa) =>
+        withDependencies[PipelineExecutionLogsRepository, NoHelper, Assertion] { (repo, _, xa) =>
           given Transactor[IO] = xa
           val result = for {
             -           <- executeSqlScript(additionSQLScript1)
@@ -68,14 +55,14 @@ class PipelineExecutionLogsRepositoryTests
 
     "findById" - {
       "should return None if the execution log does not exist" in {
-        withDependencies { (repo, _) =>
+        withDependencies[PipelineExecutionLogsRepository, NoHelper, Assertion] { (repo, _, _) =>
           val result = repo.findById(nonExistentId)
           result.asserting(_ shouldBe None)
         }
       }
 
       "should return the correct execution log if the execution log exists" in {
-        withDependencies { (repo, xa) =>
+        withDependencies[PipelineExecutionLogsRepository, NoHelper, Assertion] { (repo, _, xa) =>
           given Transactor[IO] = xa
           val result = for {
             -           <- executeSqlScript(additionSQLScript1)
@@ -93,7 +80,7 @@ class PipelineExecutionLogsRepositoryTests
 
     "create" - {
       "should create a new execution log and return its id" in {
-        withDependencies { (repo, xa) =>
+        withDependencies[PipelineExecutionLogsRepository, NoHelper, Assertion] { (repo, _, xa) =>
           given Transactor[IO] = xa
           val result = for {
             -           <- executeSqlScript(additionSQLScript1)
@@ -108,7 +95,7 @@ class PipelineExecutionLogsRepositoryTests
 
     "delete" - {
       "should delete an existing execution log" in {
-        withDependencies { (repo, xa) =>
+        withDependencies[PipelineExecutionLogsRepository, NoHelper, Assertion] { (repo, _, xa) =>
           given Transactor[IO] = xa
           val result = for {
             -            <- executeSqlScript(additionSQLScript1)
@@ -122,7 +109,7 @@ class PipelineExecutionLogsRepositoryTests
       }
 
       "should return None if execution log does not exist" in {
-        withDependencies { (repo, _) =>
+        withDependencies[PipelineExecutionLogsRepository, NoHelper, Assertion] { (repo, _, _) =>
           val result = repo.delete(nonExistentId)
           result.asserting(_ shouldBe None)
         }
@@ -131,7 +118,7 @@ class PipelineExecutionLogsRepositoryTests
 
     "Edge Cases: Concurrent Transactions" - {
       "should handle concurrent inserts without data loss" in {
-        withDependencies { (repo, xa) =>
+        withDependencies[PipelineExecutionLogsRepository, NoHelper, Assertion] { (repo, _, xa) =>
           given Transactor[IO] = xa
           val results = for {
             - <- executeSqlScript(additionSQLScript1)
@@ -151,7 +138,7 @@ class PipelineExecutionLogsRepositoryTests
 
     "Edge Cases: Large Dataset" - {
       "should handle large number of records in findAll" in {
-        withDependencies { (repo, xa) =>
+        withDependencies[PipelineExecutionLogsRepository, NoHelper, Assertion] { (repo, _, xa) =>
           given Transactor[IO] = xa
           val results = for {
             - <- executeSqlScript(additionSQLScript1)

@@ -4,6 +4,7 @@ import cats.*
 import cats.syntax.all.*
 import cats.effect.{IO, Resource}
 import com.dimafeng.testcontainers.{JdbcDatabaseContainer, PostgreSQLContainer}
+import com.sbboakye.engine.contexts.RepositorySetup
 import doobie.*
 import doobie.implicits.*
 import doobie.hikari.HikariTransactor
@@ -47,3 +48,13 @@ trait CoreSpec:
     statements.toList.traverse_ { sql =>
       Fragment.const(sql.trim).update.run.transact(xa)
     }
+
+  def withDependencies[Repo[_[_]], H[_[_]], T](
+      test: (Repo[IO], H[IO], Transactor[IO]) => IO[T]
+  )(using setup: RepositorySetup[Repo, H, IO]): IO[T] = {
+    coreSpecTransactor.use { xa =>
+      setup.use(xa) { (repo, helper, xa) =>
+        test(repo, helper, xa)
+      }
+    }
+  }

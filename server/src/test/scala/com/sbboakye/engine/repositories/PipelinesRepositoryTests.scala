@@ -4,20 +4,13 @@ import cats.*
 import cats.effect.*
 import cats.syntax.all.*
 import cats.effect.testing.scalatest.AsyncIOSpec
-import com.sbboakye.engine.domain.{Connector, Pipeline, Stage}
+import com.sbboakye.engine.domain.Pipeline
 import com.sbboakye.engine.fixtures.CoreFixture
-import com.sbboakye.engine.repositories.connector.ConnectorsRepository
-import com.sbboakye.engine.repositories.core.Core
 import com.sbboakye.engine.repositories.pipeline.{PipelinesRepository, StagesHelper}
-import com.sbboakye.engine.repositories.stage.StagesRepository
-import doobie.*
-import doobie.implicits.*
-import doobie.postgres.*
-import doobie.postgres.implicits.*
+import com.sbboakye.engine.contexts.RepositoryContext.pipelinesRepositorySetup
+import org.scalatest.Assertion
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
-import org.typelevel.log4cats.Logger
-import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 import java.util.UUID
 
@@ -31,37 +24,16 @@ class PipelinesRepositoryTests
   override val initSqlString: String = "sql/postgres.sql"
   val additionSQLScript: String      = "schedules.sql"
 
-  def withDependencies[T](
-      test: (PipelinesRepository[IO], Transactor[IO], StagesHelper[IO]) => IO[T]
-  ): IO[T] =
-    coreSpecTransactor.use { xa =>
-      given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
-      given Core[IO, Pipeline] with  {}
-      given Core[IO, Stage] with     {}
-      given Core[IO, Connector] with {}
-      given Transactor[IO] = xa
-      ConnectorsRepository[IO].use { cRepo =>
-        given ConnectorsRepository[IO] = cRepo
-        StagesRepository[IO].use { sRepo =>
-          given StagesRepository[IO]         = sRepo
-          val stagesHelper: StagesHelper[IO] = StagesHelper[IO]
-          PipelinesRepository[IO].use { repo =>
-            test(repo, xa, stagesHelper)
-          }
-        }
-      }
-    }
-
   "PipelinesRepository" - {
     "findAll" - {
       "should return an empty list when no pipelines exist" in {
-        withDependencies { (repo, _, helper) =>
+        withDependencies[PipelinesRepository, StagesHelper, Assertion] { (repo, helper, _) =>
           repo.findAll(0, 10, helper).asserting(_ shouldBe empty)
         }
       }
 
       "should return a list of pipelines when pipelines exist" in {
-        withDependencies { (repo, xa, helper) =>
+        withDependencies[PipelinesRepository, StagesHelper, Assertion] { (repo, helper, xa) =>
           val result = for {
             -           <- executeSqlScript(additionSQLScript)(using xa)
             _           <- repo.create(pipeline1)
@@ -75,14 +47,14 @@ class PipelinesRepositoryTests
 
     "findById" - {
       "should return None if the pipeline does not exist" in {
-        withDependencies { (repo, _, helper) =>
+        withDependencies[PipelinesRepository, StagesHelper, Assertion] { (repo, helper, _) =>
           val result = repo.findById(nonExistentId, helper)
           result.asserting(_ shouldBe None)
         }
       }
 
       "should return the correct pipeline if the pipeline exists" in {
-        withDependencies { (repo, xa, helper) =>
+        withDependencies[PipelinesRepository, StagesHelper, Assertion] { (repo, helper, xa) =>
           val result = for {
             -           <- executeSqlScript(additionSQLScript)(using xa)
             uuid        <- repo.create(pipeline1)
@@ -97,7 +69,7 @@ class PipelinesRepositoryTests
 
     "create" - {
       "should create a new pipeline and return its id" in {
-        withDependencies { (repo, xa, helper) =>
+        withDependencies[PipelinesRepository, StagesHelper, Assertion] { (repo, helper, xa) =>
           val result = for {
             -           <- executeSqlScript(additionSQLScript)(using xa)
             queryResult <- repo.create(pipeline1)
@@ -109,7 +81,7 @@ class PipelinesRepositoryTests
 
     "update" - {
       "should update an existing pipeline" in {
-        withDependencies { (repo, xa, helper) =>
+        withDependencies[PipelinesRepository, StagesHelper, Assertion] { (repo, helper, xa) =>
           val result = for {
             -  <- executeSqlScript(additionSQLScript)(using xa)
             id <- repo.create(pipeline1)
@@ -123,7 +95,7 @@ class PipelinesRepositoryTests
       }
 
       "should return None if pipeline does not exist" in {
-        withDependencies { (repo, xa, helper) =>
+        withDependencies[PipelinesRepository, StagesHelper, Assertion] { (repo, helper, xa) =>
           val result = for {
             -           <- executeSqlScript(additionSQLScript)(using xa)
             queryResult <- repo.update(nonExistentId, pipeline1)
@@ -135,7 +107,7 @@ class PipelinesRepositoryTests
 
     "delete" - {
       "should delete an existing pipeline" in {
-        withDependencies { (repo, xa, helper) =>
+        withDependencies[PipelinesRepository, StagesHelper, Assertion] { (repo, helper, xa) =>
           val result = for {
             -            <- executeSqlScript(additionSQLScript)(using xa)
             id           <- repo.create(pipeline1)
@@ -146,7 +118,7 @@ class PipelinesRepositoryTests
       }
 
       "should return None if pipeline does not exist" in {
-        withDependencies { (repo, _, _) =>
+        withDependencies[PipelinesRepository, StagesHelper, Assertion] { (repo, _, _) =>
           val result = repo.delete(nonExistentId)
           result.asserting(_ shouldBe None)
         }
@@ -155,7 +127,7 @@ class PipelinesRepositoryTests
 
     "Edge Cases: Concurrent Transactions" - {
       "should handle concurrent inserts without data loss" in {
-        withDependencies { (repo, xa, helper) =>
+        withDependencies[PipelinesRepository, StagesHelper, Assertion] { (repo, helper, xa) =>
           val results = for {
             -               <- executeSqlScript(additionSQLScript)(using xa)
             randomPipelines <- List.fill(10)(pipeline1.copy(id = UUID.randomUUID())).pure[IO]
@@ -168,7 +140,7 @@ class PipelinesRepositoryTests
       }
 
       "should handle concurrent updates correctly" in {
-        withDependencies { (repo, xa, helper) =>
+        withDependencies[PipelinesRepository, StagesHelper, Assertion] { (repo, helper, xa) =>
           val results = for {
             -          <- executeSqlScript(additionSQLScript)(using xa)
             pipelineId <- repo.create(pipeline1)
@@ -188,7 +160,7 @@ class PipelinesRepositoryTests
 
     "Edge Cases: Large Dataset" - {
       "should handle large number of records in findAll" in {
-        withDependencies { (repo, xa, helper) =>
+        withDependencies[PipelinesRepository, StagesHelper, Assertion] { (repo, helper, xa) =>
           val results = for {
             - <- executeSqlScript(additionSQLScript)(using xa)
             randomPipelines <- List

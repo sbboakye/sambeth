@@ -26,7 +26,6 @@ import com.sbboakye.engine.repositories.pipeline.PipelinesRepository
 import com.sbboakye.engine.repositories.stage.StagesRepository
 import doobie.*
 import doobie.implicits.*
-//import doobie.postgres.*
 import doobie.postgres.implicits.*
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
@@ -38,9 +37,9 @@ object Application extends IOApp.Simple:
   import com.sbboakye.engine.repositories.core.DBFieldMappingsMeta.given
 
   given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
-//  given core2: Core[IO, Stage] with                {}
-//  given core1: Core[IO, Connector] with            {}
-//  given core3: Core[IO, Pipeline] with             {}
+  given core2: Core[IO, Stage] with                {}
+  given core1: Core[IO, Connector] with            {}
+  given core3: Core[IO, Pipeline] with             {}
   given core4: Core[IO, PipelineExecutionLog] with {}
   given core5: Core[IO, PipelineExecution] with    {}
 
@@ -61,13 +60,13 @@ object Application extends IOApp.Simple:
           .makeDbResource[IO](dbConfig)
           .use { xa =>
             given transactor: Transactor[IO] = xa
-            PipelineExecutionLogsRepository[IO].use { cRepo =>
-              given PipelineExecutionLogsRepository[IO]   = cRepo
-              val helper: PipelineExecutionLogsHelper[IO] = PipelineExecutionLogsHelper[IO]
-              PipelineExecutionsRepository[IO].use { repo =>
-                repo.findAll(0, 10, helper)
-              }
-            }
+//            PipelineExecutionLogsRepository[IO].use { cRepo =>
+//              given PipelineExecutionLogsRepository[IO]   = cRepo
+//              val helper: PipelineExecutionLogsHelper[IO] = PipelineExecutionLogsHelper[IO]
+//              PipelineExecutionsRepository[IO].use { repo =>
+//                repo.findAll(0, 10, helper)
+//              }
+//            }
 //            ConnectorsRepository[IO].use { cRepo =>
 //              given s: ConnectorsRepository[IO] = cRepo
 //              StagesRepository[IO].use { repo =>
@@ -75,10 +74,10 @@ object Application extends IOApp.Simple:
 //                //              repo.findById(UUID.fromString("22222222-2222-2222-2222-222222222222"))
 //              }
 //            }
-//            ConnectorsRepository[IO].use { repo =>
-//              repo.findAll(0, 10)
-////              repo.create(connector1)
-//            }
+            ConnectorsRepository[IO].use { repo =>
+              repo.findAll(0, 10)
+//              repo.create(connector1)
+            }
 //            PipelinesRepository[IO].use { repo =>
 //              repo.findAll(0, 10)
 //            }

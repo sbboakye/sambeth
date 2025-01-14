@@ -18,8 +18,6 @@ class ConnectorsRepository[F[_]: MonadCancelThrow: Logger](using
     core: Core[F, Connector]
 ):
 
-  import com.sbboakye.engine.repositories.core.DBFieldMappingsMeta.given
-
   def findAll(offset: Int, limit: Int): F[Seq[Connector]] =
     core.findAll(ConnectorQueries.select, offset, limit, ConnectorQueries.limitAndOffset)
 
