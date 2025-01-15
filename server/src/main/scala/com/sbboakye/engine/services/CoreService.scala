@@ -5,9 +5,8 @@ import doobie.Transactor
 
 import java.util.UUID
 
-trait CoreService[F[_], Repo[_[_]], H[_[_]], A](using
-    setup: RepositorySetup[Repo, H, F],
-    xa: Transactor[F]
+trait CoreService[F[_], Repo[_[_]], H[_[_]], A](xa: Transactor[F])(using
+    setup: RepositorySetup[Repo, H, F]
 ):
 
   def withDependencies[T](

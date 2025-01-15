@@ -25,7 +25,6 @@ import doobie.implicits.*
 import doobie.postgres.*
 import doobie.postgres.implicits.*
 import org.typelevel.log4cats.Logger
-import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 class RepositoryContext[F[_]: MonadCancelThrow: Logger]:
 
