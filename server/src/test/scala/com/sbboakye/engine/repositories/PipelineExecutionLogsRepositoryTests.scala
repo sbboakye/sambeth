@@ -7,13 +7,10 @@ import cats.effect.testing.scalatest.AsyncIOSpec
 import com.sbboakye.engine.domain.PipelineExecutionLog
 import com.sbboakye.engine.fixtures.CoreFixture
 import com.sbboakye.engine.repositories.executionLog.PipelineExecutionLogsRepository
+import com.sbboakye.engine.contexts.RepositoryContext.NoHelper
 import doobie.*
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
-import com.sbboakye.engine.contexts.RepositoryContext.{
-  NoHelper,
-  pipelineExecutionLogsRepositorySetup
-}
 import org.scalatest.Assertion
 
 import java.util.UUID
@@ -25,6 +22,7 @@ class PipelineExecutionLogsRepositoryTests
     with CoreSpec
     with CoreFixture:
 
+  import repositoryContext.pipelineExecutionLogsRepositorySetup
   override val initSqlString: String = "sql/postgres.sql"
   val additionSQLScript1: String     = "pipelines.sql"
   val additionSQLScript2: String     = "stages.sql"

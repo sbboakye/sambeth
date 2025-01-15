@@ -1,6 +1,7 @@
 package com.sbboakye.engine.contexts
 
 import cats.effect.*
+import com.sbboakye.engine.contexts.RepositoryContext.NoHelper
 import com.sbboakye.engine.domain.{
   Connector,
   Pipeline,
@@ -26,98 +27,95 @@ import doobie.postgres.implicits.*
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
-object RepositoryContext:
+class RepositoryContext[F[_]: MonadCancelThrow: Logger]:
 
-  import com.sbboakye.engine.repositories.*
-
-  type NoHelper[F[_]] = Unit
-
-  given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
-
-  given connectorsRepositorySetup: RepositorySetup[ConnectorsRepository, NoHelper, IO] with
-    def use[T](xa: Transactor[IO])(
-        run: (ConnectorsRepository[IO], Unit, Transactor[IO]) => IO[T]
-    ): IO[T] =
+  given connectorsRepositorySetup: RepositorySetup[ConnectorsRepository, NoHelper, F] with
+    def use[T](xa: Transactor[F])(
+        run: (ConnectorsRepository[F], Unit, Transactor[F]) => F[T]
+    ): F[T] =
       import com.sbboakye.engine.repositories.core.DBFieldMappingsMeta.given
-      given Core[IO, Connector] with {}
-
-      given Transactor[IO] = xa
-
-      ConnectorsRepository[IO].use { repo =>
+      given Core[F, Connector] with {}
+      given Transactor[F] = xa
+      ConnectorsRepository[F].use { repo =>
         run(repo, (), xa)
       }
 
   given pipelineExecutionLogsRepositorySetup
-      : RepositorySetup[PipelineExecutionLogsRepository, NoHelper, IO] with
-    def use[T](xa: Transactor[IO])(
-        run: (PipelineExecutionLogsRepository[IO], Unit, Transactor[IO]) => IO[T]
-    ): IO[T] =
-      given Core[IO, PipelineExecutionLog] with {}
-      given Transactor[IO] = xa
-      PipelineExecutionLogsRepository[IO].use { repo =>
+      : RepositorySetup[PipelineExecutionLogsRepository, NoHelper, F] with
+    def use[T](xa: Transactor[F])(
+        run: (PipelineExecutionLogsRepository[F], Unit, Transactor[F]) => F[T]
+    ): F[T] =
+      given Core[F, PipelineExecutionLog] with {}
+      given Transactor[F] = xa
+      PipelineExecutionLogsRepository[F].use { repo =>
         run(repo, (), xa)
       }
 
-  given schedulesRepositorySetup: RepositorySetup[SchedulesRepository, NoHelper, IO] with
-    def use[T](xa: Transactor[IO])(
-        run: (SchedulesRepository[IO], Unit, Transactor[IO]) => IO[T]
-    ): IO[T] =
-      given Core[IO, Schedule] with {}
-      given Transactor[IO] = xa
-      SchedulesRepository[IO].use { repo =>
+  given schedulesRepositorySetup: RepositorySetup[SchedulesRepository, NoHelper, F] with
+    def use[T](xa: Transactor[F])(
+        run: (SchedulesRepository[F], Unit, Transactor[F]) => F[T]
+    ): F[T] =
+      given Core[F, Schedule] with {}
+      given Transactor[F] = xa
+      SchedulesRepository[F].use { repo =>
         run(repo, (), xa)
       }
 
-  given pipelinesRepositorySetup: RepositorySetup[PipelinesRepository, StagesHelper, IO] with
-    def use[T](xa: Transactor[IO])(
-        run: (PipelinesRepository[IO], StagesHelper[IO], Transactor[IO]) => IO[T]
-    ): IO[T] =
-      given Core[IO, Pipeline] with  {}
-      given Core[IO, Stage] with     {}
-      given Core[IO, Connector] with {}
-      given Transactor[IO] = xa
-      ConnectorsRepository[IO].use { cRepo =>
-        given ConnectorsRepository[IO] = cRepo
-        StagesRepository[IO].use { sRepo =>
-          given StagesRepository[IO]         = sRepo
-          val stagesHelper: StagesHelper[IO] = StagesHelper[IO]
-          PipelinesRepository[IO].use { repo =>
+  given pipelinesRepositorySetup: RepositorySetup[PipelinesRepository, StagesHelper, F] with
+    def use[T](xa: Transactor[F])(
+        run: (PipelinesRepository[F], StagesHelper[F], Transactor[F]) => F[T]
+    ): F[T] =
+      given Core[F, Pipeline] with  {}
+      given Core[F, Stage] with     {}
+      given Core[F, Connector] with {}
+      given Transactor[F] = xa
+      ConnectorsRepository[F].use { cRepo =>
+        given ConnectorsRepository[F] = cRepo
+        StagesRepository[F].use { sRepo =>
+          given StagesRepository[F]         = sRepo
+          val stagesHelper: StagesHelper[F] = StagesHelper[F]
+          PipelinesRepository[F].use { repo =>
             run(repo, stagesHelper, xa)
           }
         }
       }
 
-  given stagesRepositorySetup: RepositorySetup[StagesRepository, ConnectorsHelper, IO] with
-    def use[T](xa: Transactor[IO])(
-        run: (StagesRepository[IO], ConnectorsHelper[IO], Transactor[IO]) => IO[T]
-    ): IO[T] =
-      given Core[IO, Stage] with     {}
-      given Core[IO, Connector] with {}
-      given Transactor[IO] = xa
-      ConnectorsRepository[IO].use { cRepo =>
-        given ConnectorsRepository[IO]             = cRepo
-        val connectorsHelper: ConnectorsHelper[IO] = ConnectorsHelper[IO]
-        StagesRepository[IO].use { repo =>
+  given stagesRepositorySetup: RepositorySetup[StagesRepository, ConnectorsHelper, F] with
+    def use[T](xa: Transactor[F])(
+        run: (StagesRepository[F], ConnectorsHelper[F], Transactor[F]) => F[T]
+    ): F[T] =
+      given Core[F, Stage] with     {}
+      given Core[F, Connector] with {}
+      given Transactor[F] = xa
+      ConnectorsRepository[F].use { cRepo =>
+        given ConnectorsRepository[F]             = cRepo
+        val connectorsHelper: ConnectorsHelper[F] = ConnectorsHelper[F]
+        StagesRepository[F].use { repo =>
           run(repo, connectorsHelper, xa)
         }
       }
 
   given pipelineExecutionsRepositorySetup
-      : RepositorySetup[PipelineExecutionsRepository, PipelineExecutionLogsHelper, IO] with
-    def use[T](xa: Transactor[IO])(
+      : RepositorySetup[PipelineExecutionsRepository, PipelineExecutionLogsHelper, F] with
+    def use[T](xa: Transactor[F])(
         run: (
-            PipelineExecutionsRepository[IO],
-            PipelineExecutionLogsHelper[IO],
-            Transactor[IO]
-        ) => IO[T]
-    ): IO[T] =
-      given Core[IO, PipelineExecutionLog] with {}
-      given Core[IO, PipelineExecution] with    {}
-      given Transactor[IO] = xa
-      PipelineExecutionLogsRepository[IO].use { cRepo =>
-        given PipelineExecutionLogsRepository[IO]   = cRepo
-        val helper: PipelineExecutionLogsHelper[IO] = PipelineExecutionLogsHelper[IO]
-        PipelineExecutionsRepository[IO].use { repo =>
+            PipelineExecutionsRepository[F],
+            PipelineExecutionLogsHelper[F],
+            Transactor[F]
+        ) => F[T]
+    ): F[T] =
+      given Core[F, PipelineExecutionLog] with {}
+      given Core[F, PipelineExecution] with    {}
+      given Transactor[F] = xa
+      PipelineExecutionLogsRepository[F].use { cRepo =>
+        given PipelineExecutionLogsRepository[F]   = cRepo
+        val helper: PipelineExecutionLogsHelper[F] = PipelineExecutionLogsHelper[F]
+        PipelineExecutionsRepository[F].use { repo =>
           run(repo, helper, xa)
         }
       }
+
+object RepositoryContext:
+  type NoHelper[F[_]] = Unit
+
+  def apply[F[_]: MonadCancelThrow: Logger]: RepositoryContext[F] = new RepositoryContext[F]

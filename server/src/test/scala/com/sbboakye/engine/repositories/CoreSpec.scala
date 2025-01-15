@@ -4,12 +4,14 @@ import cats.*
 import cats.syntax.all.*
 import cats.effect.{IO, Resource}
 import com.dimafeng.testcontainers.{JdbcDatabaseContainer, PostgreSQLContainer}
-import com.sbboakye.engine.contexts.RepositorySetup
+import com.sbboakye.engine.contexts.{RepositoryContext, RepositorySetup}
 import doobie.*
 import doobie.implicits.*
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
 import org.testcontainers.utility.DockerImageName
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 trait CoreSpec:
   val initSqlString: String
@@ -48,6 +50,9 @@ trait CoreSpec:
     statements.toList.traverse_ { sql =>
       Fragment.const(sql.trim).update.run.transact(xa)
     }
+
+  given logger: Logger[IO]                     = Slf4jLogger.getLogger[IO]
+  val repositoryContext: RepositoryContext[IO] = RepositoryContext[IO]
 
   def withDependencies[Repo[_[_]], H[_[_]], T](
       test: (Repo[IO], H[IO], Transactor[IO]) => IO[T]

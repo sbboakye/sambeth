@@ -6,7 +6,6 @@ import cats.syntax.all.*
 import cats.effect.testing.scalatest.AsyncIOSpec
 import com.sbboakye.engine.domain.Stage
 import com.sbboakye.engine.fixtures.CoreFixture
-import com.sbboakye.engine.contexts.RepositoryContext.stagesRepositorySetup
 import com.sbboakye.engine.repositories.stage.{ConnectorsHelper, StagesRepository}
 import org.scalatest.Assertion
 import org.scalatest.freespec.AsyncFreeSpec
@@ -21,6 +20,7 @@ class StagesRepositoryTests
     with CoreSpec
     with CoreFixture:
 
+  import repositoryContext.stagesRepositorySetup
   override val initSqlString: String = "sql/postgres.sql"
   val additionSQLScript: String      = "pipelines.sql"
 

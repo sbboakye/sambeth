@@ -40,8 +40,8 @@ class PipelineExecutionLogsRepository[F[_]: MonadCancelThrow: Logger] private (u
       .transact(xa)
 
 object PipelineExecutionLogsRepository:
-  def apply[F[_]: Async: Logger](using
+  def apply[F[_]: MonadCancelThrow: Logger](using
       xa: Transactor[F],
       core: Core[F, PipelineExecutionLog]
   ): Resource[F, PipelineExecutionLogsRepository[F]] =
-    Resource.eval(Async[F].pure(new PipelineExecutionLogsRepository[F]))
+    Resource.eval(MonadCancelThrow[F].pure(new PipelineExecutionLogsRepository[F]))

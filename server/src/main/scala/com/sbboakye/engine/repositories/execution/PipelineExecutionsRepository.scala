@@ -53,9 +53,9 @@ class PipelineExecutionsRepository[F[_]: MonadCancelThrow: Logger] private (usin
   def delete(id: UUID): F[Option[Int]] = core.delete(PipelineExecutionQueries.delete(id))
 
 object PipelineExecutionsRepository:
-  def apply[F[_]: Async: Logger](using
+  def apply[F[_]: MonadCancelThrow: Logger](using
       xa: Transactor[F],
       core: Core[F, PipelineExecution],
       executionLogsRepository: PipelineExecutionLogsRepository[F]
   ): Resource[F, PipelineExecutionsRepository[F]] =
-    Resource.eval(Async[F].pure(new PipelineExecutionsRepository[F]))
+    Resource.eval(MonadCancelThrow[F].pure(new PipelineExecutionsRepository[F]))

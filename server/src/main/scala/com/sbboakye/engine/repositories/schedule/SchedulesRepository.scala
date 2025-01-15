@@ -28,8 +28,8 @@ class SchedulesRepository[F[_]: MonadCancelThrow: Logger] private (using
   def delete(id: UUID): F[Option[Int]] = core.delete(ScheduleQueries.delete(id))
 
 object SchedulesRepository:
-  def apply[F[_]: Async: Logger](using
+  def apply[F[_]: MonadCancelThrow: Logger](using
       xa: Transactor[F],
       core: Core[F, Schedule]
   ): Resource[F, SchedulesRepository[F]] =
-    Resource.eval(Async[F].pure(new SchedulesRepository[F]))
+    Resource.eval(MonadCancelThrow[F].pure(new SchedulesRepository[F]))

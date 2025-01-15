@@ -7,7 +7,7 @@ import cats.effect.testing.scalatest.AsyncIOSpec
 import com.sbboakye.engine.domain.Connector
 import com.sbboakye.engine.fixtures.CoreFixture
 import com.sbboakye.engine.repositories.connector.ConnectorsRepository
-import com.sbboakye.engine.contexts.RepositoryContext.{NoHelper, connectorsRepositorySetup}
+import com.sbboakye.engine.contexts.RepositoryContext.NoHelper
 import doobie.*
 import org.scalatest.Assertion
 import org.scalatest.freespec.AsyncFreeSpec
@@ -22,6 +22,7 @@ class ConnectorsRepositoryTests
     with CoreSpec
     with CoreFixture:
 
+  import repositoryContext.connectorsRepositorySetup
   override val initSqlString: String = "sql/postgres.sql"
   val additionSQLScript1: String     = "pipelines.sql"
   val additionSQLScript2: String     = "stages.sql"

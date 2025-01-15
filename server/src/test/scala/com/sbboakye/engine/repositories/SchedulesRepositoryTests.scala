@@ -9,7 +9,7 @@ import com.sbboakye.engine.fixtures.CoreFixture
 import com.sbboakye.engine.repositories.schedule.SchedulesRepository
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
-import com.sbboakye.engine.contexts.RepositoryContext.{schedulesRepositorySetup, NoHelper}
+import com.sbboakye.engine.contexts.RepositoryContext.NoHelper
 import org.scalatest.Assertion
 
 import java.util.UUID
@@ -21,6 +21,7 @@ class SchedulesRepositoryTests
     with CoreSpec
     with CoreFixture:
 
+  import repositoryContext.schedulesRepositorySetup
   override val initSqlString: String = "sql/postgres.sql"
 
   "SchedulesRepository" - {
