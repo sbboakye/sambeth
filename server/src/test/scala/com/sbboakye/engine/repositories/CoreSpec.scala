@@ -3,12 +3,14 @@ package com.sbboakye.engine.repositories
 import cats.*
 import cats.syntax.all.*
 import cats.effect.{IO, Resource}
+import cats.kernel.Eq
 import com.dimafeng.testcontainers.{JdbcDatabaseContainer, PostgreSQLContainer}
 import com.sbboakye.engine.contexts.{RepositoryContext, RepositorySetup}
 import doobie.*
 import doobie.implicits.*
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
+import org.http4s.{EntityDecoder, Method, Request, Response, Status, Uri}
 import org.testcontainers.utility.DockerImageName
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
@@ -63,3 +65,19 @@ trait CoreSpec:
       }
     }
   }
+
+  def check[A](actual: IO[Response[IO]], expectedStatus: Status, expectedBody: Option[A])(using
+      ev: EntityDecoder[IO, A]
+  ): IO[Boolean] =
+    given Eq[IO[Vector[Byte]]] = Eq.fromUniversalEquals
+    actual.attempt.flatMap {
+      case Right(actualResponse) =>
+        val statusCheck = actualResponse.status == expectedStatus
+        val bodyCheckIO =
+          expectedBody.fold[IO[Boolean]](IO.pure(actualResponse.body.compile.toVector.isEmpty)) {
+            expected =>
+              actualResponse.as[A].map(_ == expected)
+          }
+        bodyCheckIO.map(_ && statusCheck)
+      case Left(_) => IO.pure(false)
+    }
