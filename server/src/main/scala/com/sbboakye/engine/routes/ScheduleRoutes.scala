@@ -49,9 +49,36 @@ class ScheduleRoutes[F[_]: Concurrent] private (scheduleService: ScheduleService
       }
   }
 
+  private val updateAPIRoute: HttpRoutes[F] = HttpRoutes.of[F] {
+    case req @ PUT -> Root / entity / "update" / UUIDVar(scheduleId) =>
+      req.as[ScheduleCreate].flatMap { scheduleCreate =>
+        Schedule.create(
+          cronExpression = scheduleCreate.cronExpression,
+          timezone = scheduleCreate.timezone
+        ) match {
+          case Right(schedule) =>
+            scheduleService
+              .update(scheduleId, schedule)
+              .flatMap(
+                _.fold(NotFound())(numberOfUpdates => Ok(ApiResponse.Success(numberOfUpdates)))
+              )
+          case Left(validationErrors) =>
+            val errorMessage = validationErrors.toList.map(_.errorMessage).mkString(", ")
+            BadRequest(ApiResponse.Error(errorMessage))
+        }
+      }
+  }
+
+  private val deleteAPIRoute: HttpRoutes[F] = HttpRoutes.of[F] {
+    case DELETE -> Root / entity / "delete" / UUIDVar(scheduleId) =>
+      scheduleService
+        .delete(scheduleId)
+        .flatMap(_.fold(NotFound())(numberOfDeletes => Ok(ApiResponse.Success(numberOfDeletes))))
+  }
+
   val routes: HttpRoutes[F] = Router(
     prefix -> (
-      listAPIRoute <+> detailAPIRoute <+> createAPIRoute
+      listAPIRoute <+> detailAPIRoute <+> createAPIRoute <+> updateAPIRoute <+> deleteAPIRoute
     )
   )
 
