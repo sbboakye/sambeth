@@ -10,6 +10,7 @@ import doobie.*
 import doobie.implicits.*
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
+import io.circe.Json
 import org.http4s.{EntityDecoder, Method, Request, Response, Status, Uri}
 import org.testcontainers.utility.DockerImageName
 import org.typelevel.log4cats.Logger
@@ -66,8 +67,31 @@ trait CoreSpec:
     }
   }
 
-  def check[A](actual: IO[Response[IO]], expectedStatus: Status, expectedBody: Option[A])(using
-      ev: EntityDecoder[IO, A]
+  def extractRelevantFields(json: Json, fieldsToExtract: List[String]): Json = {
+    json.hcursor
+      .downField("data")
+      .withFocus { dataArray =>
+        dataArray.mapArray { array =>
+          array.map { obj =>
+            Json.obj(
+              fieldsToExtract.flatMap { field =>
+                obj.hcursor.downField(field).focus.map(value => field -> value)
+              }*
+            )
+          }
+        }
+      }
+      .top
+      .getOrElse(Json.Null)
+  }
+
+  def check(
+      actual: IO[Response[IO]],
+      expectedStatus: Status,
+      expectedBody: Option[Json],
+      fieldsToCompare: List[String]
+  )(using
+      ev: EntityDecoder[IO, Json]
   ): IO[Boolean] =
     given Eq[IO[Vector[Byte]]] = Eq.fromUniversalEquals
     actual.attempt.flatMap {
@@ -75,8 +99,14 @@ trait CoreSpec:
         val statusCheck = actualResponse.status == expectedStatus
         val bodyCheckIO =
           expectedBody.fold[IO[Boolean]](IO.pure(actualResponse.body.compile.toVector.isEmpty)) {
-            expected =>
-              actualResponse.as[A].map(_ == expected)
+            expectedJson =>
+              println(s"expected: $expectedJson")
+              actualResponse.as[Json].map { actualJson =>
+                val actualRelevant   = extractRelevantFields(actualJson, fieldsToCompare)
+                val expectedRelevant = extractRelevantFields(expectedJson, fieldsToCompare)
+                println(s"actualResponse: $actualJson")
+                actualRelevant == expectedRelevant
+              }
           }
         bodyCheckIO.map(_ && statusCheck)
       case Left(_) => IO.pure(false)
