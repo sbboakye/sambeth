@@ -11,7 +11,8 @@ import doobie.implicits.*
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
 import io.circe.Json
-import org.http4s.{EntityDecoder, Method, Request, Response, Status, Uri}
+import org.http4s.{EntityDecoder, HttpRoutes, Method, Request, Response, Status, Uri}
+import org.http4s.circe.*
 import org.testcontainers.utility.DockerImageName
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
@@ -110,4 +111,20 @@ trait CoreSpec:
           }
         bodyCheckIO.map(_ && statusCheck)
       case Left(_) => IO.pure(false)
+    }
+
+  def testAPIEndpoints(
+      httpMethod: Method,
+      httpStatus: Status,
+      endpoint: String,
+      expectedJson: Option[Json] = None,
+      fieldsToCompare: List[String] = List.empty
+  )(getRoutes: (Transactor[IO]) => IO[HttpRoutes[IO]]): IO[Boolean] =
+    coreSpecTransactor.use { xa =>
+      val router = getRoutes(xa)
+      router.flatMap { routes =>
+        val request  = Request[IO](httpMethod, Uri.unsafeFromString(endpoint))
+        val response = routes.run(request).value.map(_.get)
+        check(response, httpStatus, expectedJson, fieldsToCompare)
+      }
     }

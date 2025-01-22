@@ -3,8 +3,7 @@ package com.sbboakye.engine.services
 import cats.*
 import cats.effect.*
 import cats.effect.testing.scalatest.AsyncIOSpec
-import org.http4s.{Method, Request, Status, Uri}
-import org.http4s.circe.*
+import org.http4s.{Method, Status}
 import com.sbboakye.engine.repositories.CoreSpec
 import com.sbboakye.engine.routes.ScheduleRoutes
 import doobie.Transactor
@@ -23,33 +22,18 @@ class ScheduleRoutesSpec extends AsyncFreeSpec with AsyncIOSpec with Matchers wi
   "SchedulesRoutes API" - {
     "listAPIRoute" - {
       "should return an empty list when no schedules exist" in {
-        val result = coreSpecTransactor.use { xa =>
-          ScheduleService[IO](xa).use { service =>
-            val routes   = ScheduleRoutes[IO](service).routes
-            val request  = Request[IO](Method.GET, Uri.unsafeFromString("/schedules"))
-            val response = routes.run(request).value.map(_.get)
-            response
-          }
-        }
         val expectedJson = Json.obj(
           "data" := Json.arr()
         )
-        check(result, Status.Ok, Some(expectedJson), relevantFields).asserting(_ shouldBe true)
+        testAPIEndpoints(Method.GET, Status.Ok, "/schedules", Some(expectedJson), relevantFields) {
+          xa =>
+            ScheduleService[IO](xa).use { service =>
+              IO.pure(ScheduleRoutes[IO](service).routes)
+            }
+        }.asserting(_ shouldBe true)
       }
 
       "should return a list of schedules when they exist" in {
-        val result = coreSpecTransactor.use { xa =>
-          given Transactor[IO] = xa
-          ScheduleService[IO](xa).use { service =>
-            val routes  = ScheduleRoutes[IO](service).routes
-            val request = Request[IO](Method.GET, Uri.unsafeFromString("/schedules"))
-            for {
-              -        <- executeSqlScript(additionSQLScript)
-              response <- routes.run(request).value.map(_.get)
-            } yield response
-          }
-        }
-
         val expectedJson = Json.obj(
           "data" -> Json.arr(
             Json.obj(
@@ -64,7 +48,15 @@ class ScheduleRoutesSpec extends AsyncFreeSpec with AsyncIOSpec with Matchers wi
             )
           )
         )
-        check(result, Status.Ok, Some(expectedJson), relevantFields).asserting(_ shouldBe true)
+        testAPIEndpoints(Method.GET, Status.Ok, "/schedules", Some(expectedJson), relevantFields) {
+          xa =>
+            ScheduleService[IO](xa).use { service =>
+              given Transactor[IO] = xa
+              for {
+                - <- executeSqlScript(additionSQLScript)
+              } yield ScheduleRoutes[IO](service).routes
+            }
+        }.asserting(_ shouldBe true)
       }
     }
   }
