@@ -96,22 +96,40 @@ trait CoreSpec:
       ev: EntityDecoder[IO, Json]
   ): IO[Boolean] =
     given Eq[IO[Vector[Byte]]] = Eq.fromUniversalEquals
-    actual.attempt.flatMap {
-      case Right(actualResponse) =>
-        val statusCheck = actualResponse.status == expectedStatus
-        val bodyCheckIO =
-          expectedBody.fold[IO[Boolean]](IO.pure(actualResponse.body.compile.toVector.isEmpty)) {
-            expectedJson =>
-              actualResponse.as[Json].map { actualJson =>
-                val actualRelevant   = extractRelevantFields(actualJson, fieldsToCompare)
-                val expectedRelevant = extractRelevantFields(expectedJson, fieldsToCompare)
-                actualRelevant == expectedRelevant
-              }
-          }
-        bodyCheckIO.map(_ && statusCheck)
-      case Left(e) =>
-        IO.pure(false)
-    }
+
+    for {
+      result <- actual.attempt
+      isSuccess <- result match {
+        case Right(actualResponse) =>
+          for {
+            _ <- logger.info(s"Received response with status: ${actualResponse.status}")
+            statusCheck = actualResponse.status == expectedStatus
+            _ <- logger.info(
+              s"Status check: expected $expectedStatus, got ${actualResponse.status}"
+            )
+            bodyCheck <- expectedBody match {
+              case None =>
+                actualResponse.body.compile.toVector.map(_.isEmpty).flatMap { isEmpty =>
+                  logger.info(s"Body is empty: $isEmpty").as(isEmpty)
+                }
+              case Some(expectedJson) =>
+                actualResponse.as[Json].flatMap { actualJson =>
+                  val actualRelevant = extractRelevantFields(actualJson, fieldsToCompare)
+                  logger.info(s"Actual: $actualRelevant").as(actualRelevant)
+                  val expectedRelevant = extractRelevantFields(expectedJson, fieldsToCompare)
+                  logger.info(s"Expected: $expectedRelevant").as(expectedRelevant)
+                  val bodyMatches = actualRelevant == expectedRelevant
+                  logger.info(s"Body matches: $bodyMatches").as(bodyMatches)
+                }
+            }
+            _ <- logger.info(s"Final result: ${statusCheck && bodyCheck}")
+          } yield statusCheck && bodyCheck
+        case Left(e) =>
+          for {
+            _ <- logger.error(s"Request probably failed with error: ${e.getMessage}")
+          } yield false
+      }
+    } yield isSuccess
 
   def testAPIEndpoints(
       httpMethod: Method,
