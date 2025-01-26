@@ -29,7 +29,7 @@ class ScheduleRoutes[F[_]: Concurrent] private (scheduleService: ScheduleService
     case GET -> Root / entity / UUIDVar(scheduleId) =>
       scheduleService
         .findById(scheduleId)
-        .flatMap(_.fold(NotFound())(schedule => Ok(ApiResponse.Success(schedule))))
+        .flatMap(_.fold(NotFound())(schedule => Ok(ApiResponse.Success(List(schedule)))))
   }
 
   private val createAPIRoute: HttpRoutes[F] = HttpRoutes.of[F] {

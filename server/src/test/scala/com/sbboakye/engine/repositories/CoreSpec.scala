@@ -20,6 +20,10 @@ import org.typelevel.log4cats.slf4j.Slf4jLogger
 trait CoreSpec:
   val initSqlString: String
 
+  given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
+
+  val repositoryContext: RepositoryContext[IO] = RepositoryContext[IO]
+
   val postgres: Resource[IO, PostgreSQLContainer] = {
     val acquire = IO {
       val container = PostgreSQLContainer.Def(
@@ -54,9 +58,6 @@ trait CoreSpec:
     statements.toList.traverse_ { sql =>
       Fragment.const(sql.trim).update.run.transact(xa)
     }
-
-  given logger: Logger[IO]                     = Slf4jLogger.getLogger[IO]
-  val repositoryContext: RepositoryContext[IO] = RepositoryContext[IO]
 
   def withDependencies[Repo[_[_]], H[_[_]], T](
       test: (Repo[IO], H[IO], Transactor[IO]) => IO[T]
@@ -101,16 +102,15 @@ trait CoreSpec:
         val bodyCheckIO =
           expectedBody.fold[IO[Boolean]](IO.pure(actualResponse.body.compile.toVector.isEmpty)) {
             expectedJson =>
-              println(s"expected: $expectedJson")
               actualResponse.as[Json].map { actualJson =>
                 val actualRelevant   = extractRelevantFields(actualJson, fieldsToCompare)
                 val expectedRelevant = extractRelevantFields(expectedJson, fieldsToCompare)
-                println(s"actualResponse: $actualJson")
                 actualRelevant == expectedRelevant
               }
           }
         bodyCheckIO.map(_ && statusCheck)
-      case Left(_) => IO.pure(false)
+      case Left(e) =>
+        IO.pure(false)
     }
 
   def testAPIEndpoints(

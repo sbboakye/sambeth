@@ -19,7 +19,7 @@ class ScheduleRoutesSpec extends AsyncFreeSpec with AsyncIOSpec with Matchers wi
   val relevantFields: List[String]   = List("id", "cronExpression", "timezone")
   import repositoryContext.schedulesRepositorySetup
 
-  "SchedulesRoutes API" - {
+  "ScheduleRoutes API" - {
     "listAPIRoute" - {
       "should return an empty list when no schedules exist" in {
         val expectedJson = Json.obj(
@@ -58,5 +58,50 @@ class ScheduleRoutesSpec extends AsyncFreeSpec with AsyncIOSpec with Matchers wi
             }
         }.asserting(_ shouldBe true)
       }
+    }
+
+    "detailAPIRoute" - {
+      "should return nothing and a status of not found if the schedule does not exist" in {
+        testAPIEndpoints(
+          Method.GET,
+          Status.NotFound,
+          "/schedules/123234235",
+          None,
+          relevantFields
+        ) { xa =>
+          ScheduleService[IO](xa).use { service =>
+            given Transactor[IO] = xa
+            for {
+              _ <- executeSqlScript(additionSQLScript)
+            } yield ScheduleRoutes[IO](service).routes
+          }
+        }.asserting(_ shouldBe false)
+      }
+      "should return a schedule and a status of 200 if the schedule exists" in {
+        val expectedJson = Json.obj(
+          "data" -> Json.arr(
+            Json.obj(
+              "id"             -> Json.fromString("66666666-6666-6666-6666-666666666661"),
+              "cronExpression" -> Json.fromString("0 12 * * *"),
+              "timezone"       -> Json.fromString("UTC")
+            )
+          )
+        )
+        testAPIEndpoints(
+          Method.GET,
+          Status.Ok,
+          "/schedules/66666666-6666-6666-6666-666666666661",
+          Some(expectedJson),
+          relevantFields
+        ) { xa =>
+          ScheduleService[IO](xa).use { service =>
+            given Transactor[IO] = xa
+            for {
+              _ <- executeSqlScript(additionSQLScript)
+            } yield ScheduleRoutes[IO](service).routes
+          }
+        }.asserting(_ shouldBe true)
+      }
+
     }
   }
