@@ -69,22 +69,24 @@ trait CoreSpec:
     }
   }
 
-  def extractRelevantFields(json: Json, fieldsToExtract: List[String]): Json = {
-    json.hcursor
-      .downField("data")
-      .withFocus { dataArray =>
-        dataArray.mapArray { array =>
-          array.map { obj =>
-            Json.obj(
-              fieldsToExtract.flatMap { field =>
-                obj.hcursor.downField(field).focus.map(value => field -> value)
-              }*
-            )
+  def extractRelevantFields(json: Json, fieldsToExtract: List[String]): IO[Json] = {
+    IO.pure(
+      json.hcursor
+        .downField("data")
+        .withFocus { dataArray =>
+          dataArray.mapArray { array =>
+            array.map { obj =>
+              Json.obj(
+                fieldsToExtract.flatMap { field =>
+                  obj.hcursor.downField(field).focus.map(value => field -> value)
+                }*
+              )
+            }
           }
         }
-      }
-      .top
-      .getOrElse(Json.Null)
+        .top
+        .getOrElse(Json.Null)
+    )
   }
 
   def check(
@@ -113,14 +115,16 @@ trait CoreSpec:
                   logger.info(s"Body is empty: $isEmpty").as(isEmpty)
                 }
               case Some(expectedJson) =>
-                actualResponse.as[Json].flatMap { actualJson =>
-                  val actualRelevant = extractRelevantFields(actualJson, fieldsToCompare)
-                  logger.info(s"Actual: $actualRelevant").as(actualRelevant)
-                  val expectedRelevant = extractRelevantFields(expectedJson, fieldsToCompare)
-                  logger.info(s"Expected: $expectedRelevant").as(expectedRelevant)
-                  val bodyMatches = actualRelevant == expectedRelevant
-                  logger.info(s"Body matches: $bodyMatches").as(bodyMatches)
-                }
+                for {
+                  actualJson       <- actualResponse.as[Json]
+                  _                <- logger.info(s"Actual response: $actualJson")
+                  actualRelevant   <- extractRelevantFields(actualJson, fieldsToCompare)
+                  _                <- logger.info(s"Actual: $actualRelevant").as(actualRelevant)
+                  expectedRelevant <- extractRelevantFields(expectedJson, fieldsToCompare)
+                  _ <- logger.info(s"Expected: $expectedRelevant").as(expectedRelevant)
+                  bodyMatches = actualRelevant == expectedRelevant
+                  _ <- logger.info(s"Body matches: $bodyMatches").as(bodyMatches)
+                } yield bodyMatches
             }
             _ <- logger.info(s"Final result: ${statusCheck && bodyCheck}")
           } yield statusCheck && bodyCheck
@@ -137,7 +141,7 @@ trait CoreSpec:
       endpoint: String,
       expectedJson: Option[Json] = None,
       fieldsToCompare: List[String] = List.empty
-  )(getRoutes: (Transactor[IO]) => IO[HttpRoutes[IO]]): IO[Boolean] =
+  )(getRoutes: Transactor[IO] => IO[HttpRoutes[IO]]): IO[Boolean] =
     coreSpecTransactor.use { xa =>
       val router = getRoutes(xa)
       router.flatMap { routes =>
