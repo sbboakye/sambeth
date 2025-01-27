@@ -29,7 +29,11 @@ class ScheduleRoutes[F[_]: Concurrent] private (scheduleService: ScheduleService
     case GET -> Root / entity / UUIDVar(scheduleId) =>
       scheduleService
         .findById(scheduleId)
-        .flatMap(_.fold(NotFound())(schedule => Ok(ApiResponse.Success(List(schedule)))))
+        .flatMap(
+          _.fold(NotFound(ApiResponse.Error("Schedule not found")))(schedule =>
+            Ok(ApiResponse.Success(List(schedule)))
+          )
+        )
   }
 
   private val createAPIRoute: HttpRoutes[F] = HttpRoutes.of[F] {
@@ -41,7 +45,7 @@ class ScheduleRoutes[F[_]: Concurrent] private (scheduleService: ScheduleService
         ) match {
           case Right(schedule) =>
             scheduleService.create(schedule).flatMap { scheduleId =>
-              Created(ApiResponse.Success(scheduleId))
+              Created(ApiResponse.Success(List(Map("id" -> scheduleId))))
             }
           case Left(validationErrors) =>
             val errorMessage = validationErrors.toList.map(_.errorMessage).mkString(", ")

@@ -93,11 +93,34 @@ trait CoreSpec:
       actual: IO[Response[IO]],
       expectedStatus: Status,
       expectedBody: Option[Json],
-      fieldsToCompare: List[String]
+      fieldsToCompare: List[String],
+      onlyStatus: Boolean = false
   )(using
       ev: EntityDecoder[IO, Json]
   ): IO[Boolean] =
     given Eq[IO[Vector[Byte]]] = Eq.fromUniversalEquals
+
+    def logResult[T](label: String, result: T): IO[Unit] = logger.info(s"$label: $result")
+
+    def processBodyCheck(actualResponse: Response[IO], expectedBody: Option[Json]): IO[Boolean] =
+      expectedBody match {
+        case None =>
+          for {
+            isEmpty <- actualResponse.body.compile.toVector.map(_.isEmpty)
+            _       <- logger.info(s"Body is empty: $isEmpty")
+          } yield isEmpty
+        case Some(expectedJson) =>
+          for {
+            actualJson       <- actualResponse.as[Json]
+            _                <- logger.info(s"Actual response: $actualJson")
+            actualRelevant   <- extractRelevantFields(actualJson, fieldsToCompare)
+            _                <- logger.info(s"Actual: $actualRelevant")
+            expectedRelevant <- extractRelevantFields(expectedJson, fieldsToCompare)
+            _                <- logger.info(s"Expected: $expectedRelevant")
+            bodyMatches = actualRelevant == expectedRelevant
+            _ <- logger.info(s"Body matches: $bodyMatches")
+          } yield bodyMatches
+      }
 
     for {
       result <- actual.attempt
@@ -109,29 +132,12 @@ trait CoreSpec:
             _ <- logger.info(
               s"Status check: expected $expectedStatus, got ${actualResponse.status}"
             )
-            bodyCheck <- expectedBody match {
-              case None =>
-                actualResponse.body.compile.toVector.map(_.isEmpty).flatMap { isEmpty =>
-                  logger.info(s"Body is empty: $isEmpty").as(isEmpty)
-                }
-              case Some(expectedJson) =>
-                for {
-                  actualJson       <- actualResponse.as[Json]
-                  _                <- logger.info(s"Actual response: $actualJson")
-                  actualRelevant   <- extractRelevantFields(actualJson, fieldsToCompare)
-                  _                <- logger.info(s"Actual: $actualRelevant").as(actualRelevant)
-                  expectedRelevant <- extractRelevantFields(expectedJson, fieldsToCompare)
-                  _ <- logger.info(s"Expected: $expectedRelevant").as(expectedRelevant)
-                  bodyMatches = actualRelevant == expectedRelevant
-                  _ <- logger.info(s"Body matches: $bodyMatches").as(bodyMatches)
-                } yield bodyMatches
-            }
+            bodyCheck <-
+              if (onlyStatus) IO.pure(true) else processBodyCheck(actualResponse, expectedBody)
             _ <- logger.info(s"Final result: ${statusCheck && bodyCheck}")
           } yield statusCheck && bodyCheck
         case Left(e) =>
-          for {
-            _ <- logger.error(s"Request probably failed with error: ${e.getMessage}")
-          } yield false
+          logger.error(s"No route matched for: ${e.getMessage}").as(false)
       }
     } yield isSuccess
 
@@ -140,13 +146,29 @@ trait CoreSpec:
       httpStatus: Status,
       endpoint: String,
       expectedJson: Option[Json] = None,
-      fieldsToCompare: List[String] = List.empty
+      maybeBody: Option[Json] = None,
+      fieldsToCompare: List[String] = List.empty,
+      onlyStatus: Boolean = false
   )(getRoutes: Transactor[IO] => IO[HttpRoutes[IO]]): IO[Boolean] =
     coreSpecTransactor.use { xa =>
       val router = getRoutes(xa)
       router.flatMap { routes =>
-        val request  = Request[IO](httpMethod, Uri.unsafeFromString(endpoint))
+        val baseRequest = Request[IO](httpMethod, Uri.unsafeFromString(endpoint))
+        val request = httpMethod match {
+          case Method.POST | Method.PUT =>
+            maybeBody match {
+              case Some(body) => baseRequest.withEntity(body)
+              case None       => baseRequest
+            }
+          case _ => baseRequest
+        }
         val response = routes.run(request).value.map(_.get)
-        check(response, httpStatus, expectedJson, fieldsToCompare)
+        check(
+          actual = response,
+          expectedStatus = httpStatus,
+          expectedBody = expectedJson,
+          fieldsToCompare = fieldsToCompare,
+          onlyStatus = onlyStatus
+        )
       }
     }
