@@ -23,7 +23,6 @@ class ScheduleRoutesSpec
   override val initSqlString: String       = "sql/postgres.sql"
   private val additionSQLScript: String    = "schedules.sql"
   private val relevantFields: List[String] = List("id", "cronExpression", "timezone")
-  private val errorFields: List[String]    = List("message")
   private val entity                       = "schedules"
   import repositoryContext.schedulesRepositorySetup
 
@@ -178,7 +177,7 @@ class ScheduleRoutesSpec
           "timezone"       -> Json.fromString(validSchedule.timezone)
         )
         val expectedJson = Json.obj(
-          "message" -> Json.fromString("Schedule not found")
+          "error" -> Json.fromString("Schedule not found")
         )
         testAPIEndpoints(
           httpMethod = Method.PUT,
@@ -186,6 +185,132 @@ class ScheduleRoutesSpec
           endpoint = s"/$entity/update/66666666-6666-6666-6666-666666666660",
           expectedJson = Some(expectedJson),
           maybeBody = Some(validScheduleJson),
+          checkErrorResponse = true
+        ) { xa =>
+          ScheduleService[IO](xa)
+            .use { service =>
+              given Transactor[IO] = xa
+
+              for {
+                _ <- executeSqlScript(additionSQLScript)
+              } yield ScheduleRoutes[IO](service).routes
+            }
+        }.asserting(_ shouldBe true)
+      }
+
+      "should return Invalid Cron if schedule cron is invalid" in {
+        val validScheduleJson = Json.obj(
+          "cronExpression" -> Json.fromString(invalidCronExpression),
+          "timezone"       -> Json.fromString(validSchedule.timezone)
+        )
+        val expectedJson = Json.obj(
+          "error" -> Json.fromString("Invalid cron expression")
+        )
+        testAPIEndpoints(
+          httpMethod = Method.PUT,
+          httpStatus = Status.BadRequest,
+          endpoint = s"/$entity/update/66666666-6666-6666-6666-666666666661",
+          expectedJson = Some(expectedJson),
+          maybeBody = Some(validScheduleJson),
+          checkErrorResponse = true
+        ) { xa =>
+          ScheduleService[IO](xa)
+            .use { service =>
+              given Transactor[IO] = xa
+
+              for {
+                _ <- executeSqlScript(additionSQLScript)
+              } yield ScheduleRoutes[IO](service).routes
+            }
+        }.asserting(_ shouldBe true)
+      }
+
+      "should return Invalid timezone if schedule timezone is invalid" in {
+        val validScheduleJson = Json.obj(
+          "cronExpression" -> Json.fromString(validSchedule.cronExpression),
+          "timezone"       -> Json.fromString(invalidTimezone)
+        )
+        val expectedJson = Json.obj(
+          "error" -> Json.fromString("Invalid timezone")
+        )
+        testAPIEndpoints(
+          httpMethod = Method.PUT,
+          httpStatus = Status.BadRequest,
+          endpoint = s"/$entity/update/66666666-6666-6666-6666-666666666661",
+          expectedJson = Some(expectedJson),
+          maybeBody = Some(validScheduleJson),
+          checkErrorResponse = true
+        ) { xa =>
+          ScheduleService[IO](xa)
+            .use { service =>
+              given Transactor[IO] = xa
+
+              for {
+                _ <- executeSqlScript(additionSQLScript)
+              } yield ScheduleRoutes[IO](service).routes
+            }
+        }.asserting(_ shouldBe true)
+      }
+
+      "should return Invalid cron expression and Invalid timezone if schedule cron and timezone are both invalid" in {
+        val validScheduleJson = Json.obj(
+          "cronExpression" -> Json.fromString(invalidCronExpression),
+          "timezone"       -> Json.fromString(invalidTimezone)
+        )
+        val expectedJson = Json.obj(
+          "error" -> Json.fromString("Invalid cron expression, Invalid timezone")
+        )
+        testAPIEndpoints(
+          httpMethod = Method.PUT,
+          httpStatus = Status.BadRequest,
+          endpoint = s"/$entity/update/66666666-6666-6666-6666-666666666661",
+          expectedJson = Some(expectedJson),
+          maybeBody = Some(validScheduleJson),
+          checkErrorResponse = true
+        ) { xa =>
+          ScheduleService[IO](xa)
+            .use { service =>
+              given Transactor[IO] = xa
+
+              for {
+                _ <- executeSqlScript(additionSQLScript)
+              } yield ScheduleRoutes[IO](service).routes
+            }
+        }.asserting(_ shouldBe true)
+      }
+    }
+
+    "deleteAPIRoute" - {
+      "should delete an existing schedule" in {
+        val expectedJson = Json.obj(
+          "data" -> Json.fromInt(1)
+        )
+        testAPIEndpoints(
+          httpMethod = Method.DELETE,
+          httpStatus = Status.Ok,
+          endpoint = s"/$entity/delete/66666666-6666-6666-6666-666666666661",
+          expectedJson = Some(expectedJson)
+        ) { xa =>
+          ScheduleService[IO](xa)
+            .use { service =>
+              given Transactor[IO] = xa
+
+              for {
+                _ <- executeSqlScript(additionSQLScript)
+              } yield ScheduleRoutes[IO](service).routes
+            }
+        }.asserting(_ shouldBe true)
+      }
+
+      "should return 404 Not Found if schedule does not exist" in {
+        val expectedJson = Json.obj(
+          "error" -> Json.fromString("Schedule not found")
+        )
+        testAPIEndpoints(
+          httpMethod = Method.DELETE,
+          httpStatus = Status.NotFound,
+          endpoint = s"/$entity/delete/66666666-6666-6666-6666-666666666660",
+          expectedJson = Some(expectedJson),
           checkErrorResponse = true
         ) { xa =>
           ScheduleService[IO](xa)

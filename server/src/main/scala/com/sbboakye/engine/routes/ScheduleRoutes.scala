@@ -66,7 +66,9 @@ class ScheduleRoutes[F[_]: Concurrent] private (scheduleService: ScheduleService
             scheduleService
               .update(scheduleId, schedule)
               .flatMap(
-                _.fold(NotFound())(numberOfUpdates => Ok(ApiResponse.Success(numberOfUpdates)))
+                _.fold(NotFound(ApiResponse.Error("Schedule not found")))(numberOfUpdates =>
+                  Ok(ApiResponse.Success(numberOfUpdates))
+                )
               )
           case Left(validationErrors) =>
             val errorMessage = validationErrors.toList.map(_.errorMessage).mkString(", ")
@@ -79,7 +81,11 @@ class ScheduleRoutes[F[_]: Concurrent] private (scheduleService: ScheduleService
     case DELETE -> Root / entity / "delete" / UUIDVar(scheduleId) =>
       scheduleService
         .delete(scheduleId)
-        .flatMap(_.fold(NotFound())(numberOfDeletes => Ok(ApiResponse.Success(numberOfDeletes))))
+        .flatMap(
+          _.fold(NotFound(ApiResponse.Error("Schedule not found")))(numberOfDeletes =>
+            Ok(ApiResponse.Success(numberOfDeletes))
+          )
+        )
   }
 
   val routes: HttpRoutes[F] = Router(
