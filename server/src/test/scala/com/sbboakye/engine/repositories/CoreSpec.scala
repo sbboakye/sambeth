@@ -94,7 +94,8 @@ trait CoreSpec:
       expectedStatus: Status,
       expectedBody: Option[Json],
       fieldsToCompare: List[String],
-      onlyStatus: Boolean = false
+      onlyStatus: Boolean = false,
+      checkErrorResponse: Boolean = false
   )(using
       ev: EntityDecoder[IO, Json]
   ): IO[Boolean] =
@@ -111,12 +112,16 @@ trait CoreSpec:
           } yield isEmpty
         case Some(expectedJson) =>
           for {
-            actualJson       <- actualResponse.as[Json]
-            _                <- logger.info(s"Actual response: $actualJson")
-            actualRelevant   <- extractRelevantFields(actualJson, fieldsToCompare)
-            _                <- logger.info(s"Actual: $actualRelevant")
-            expectedRelevant <- extractRelevantFields(expectedJson, fieldsToCompare)
-            _                <- logger.info(s"Expected: $expectedRelevant")
+            actualJson <- actualResponse.as[Json]
+            _          <- logger.info(s"Actual response: $actualJson")
+            actualRelevant <-
+              if checkErrorResponse then IO.pure(actualJson)
+              else extractRelevantFields(actualJson, fieldsToCompare)
+            _ <- logger.info(s"Actual: $actualRelevant")
+            expectedRelevant <-
+              if checkErrorResponse then IO.pure(expectedJson)
+              else extractRelevantFields(expectedJson, fieldsToCompare)
+            _ <- logger.info(s"Expected: $expectedRelevant")
             bodyMatches = actualRelevant == expectedRelevant
             _ <- logger.info(s"Body matches: $bodyMatches")
           } yield bodyMatches
@@ -148,7 +153,8 @@ trait CoreSpec:
       expectedJson: Option[Json] = None,
       maybeBody: Option[Json] = None,
       fieldsToCompare: List[String] = List.empty,
-      onlyStatus: Boolean = false
+      onlyStatus: Boolean = false,
+      checkErrorResponse: Boolean = false
   )(getRoutes: Transactor[IO] => IO[HttpRoutes[IO]]): IO[Boolean] =
     coreSpecTransactor.use { xa =>
       val router = getRoutes(xa)
@@ -168,7 +174,8 @@ trait CoreSpec:
           expectedStatus = httpStatus,
           expectedBody = expectedJson,
           fieldsToCompare = fieldsToCompare,
-          onlyStatus = onlyStatus
+          onlyStatus = onlyStatus,
+          checkErrorResponse = checkErrorResponse
         )
       }
     }

@@ -23,6 +23,7 @@ class ScheduleRoutesSpec
   override val initSqlString: String       = "sql/postgres.sql"
   private val additionSQLScript: String    = "schedules.sql"
   private val relevantFields: List[String] = List("id", "cronExpression", "timezone")
+  private val errorFields: List[String]    = List("message")
   private val entity                       = "schedules"
   import repositoryContext.schedulesRepositorySetup
 
@@ -141,6 +142,60 @@ class ScheduleRoutesSpec
               _ <- executeSqlScript(additionSQLScript)
             } yield ScheduleRoutes[IO](service).routes
           }
+        }.asserting(_ shouldBe true)
+      }
+    }
+
+    "updateAPIRoute" - {
+      "should update an existing schedule" in {
+        val validScheduleJson = Json.obj(
+          "cronExpression" -> Json.fromString(validSchedule.cronExpression),
+          "timezone"       -> Json.fromString(validSchedule.timezone)
+        )
+        val expectedJson = Json.obj(
+          "data" -> Json.fromInt(1)
+        )
+        testAPIEndpoints(
+          httpMethod = Method.PUT,
+          httpStatus = Status.Ok,
+          endpoint = s"/$entity/update/66666666-6666-6666-6666-666666666661",
+          expectedJson = Some(expectedJson),
+          maybeBody = Some(validScheduleJson)
+        ) { xa =>
+          ScheduleService[IO](xa)
+            .use { service =>
+              given Transactor[IO] = xa
+              for {
+                _ <- executeSqlScript(additionSQLScript)
+              } yield ScheduleRoutes[IO](service).routes
+            }
+        }.asserting(_ shouldBe true)
+      }
+
+      "should return 404 Not Found if schedule does not exist" in {
+        val validScheduleJson = Json.obj(
+          "cronExpression" -> Json.fromString(validSchedule.cronExpression),
+          "timezone"       -> Json.fromString(validSchedule.timezone)
+        )
+        val expectedJson = Json.obj(
+          "message" -> Json.fromString("Schedule not found")
+        )
+        testAPIEndpoints(
+          httpMethod = Method.PUT,
+          httpStatus = Status.NotFound,
+          endpoint = s"/$entity/update/66666666-6666-6666-6666-666666666660",
+          expectedJson = Some(expectedJson),
+          maybeBody = Some(validScheduleJson),
+          checkErrorResponse = true
+        ) { xa =>
+          ScheduleService[IO](xa)
+            .use { service =>
+              given Transactor[IO] = xa
+
+              for {
+                _ <- executeSqlScript(additionSQLScript)
+              } yield ScheduleRoutes[IO](service).routes
+            }
         }.asserting(_ shouldBe true)
       }
     }
