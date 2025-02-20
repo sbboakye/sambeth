@@ -6,6 +6,7 @@ import com.sbboakye.engine.domain.Connector
 import com.sbboakye.engine.domain.CustomTypes.StageId
 import com.sbboakye.engine.repositories.Repository
 import com.sbboakye.engine.repositories.core.Core
+import com.sbboakye.engine.repositories.core.DBFieldMappingsMeta.given
 import doobie.*
 import doobie.implicits.*
 import doobie.postgres.*
@@ -18,7 +19,6 @@ class ConnectorsRepository[F[_]: { MonadCancelThrow, Logger }](using
     xa: Transactor[F]
 ) extends Core[F, Connector]
     with Repository[F, Connector]:
-
   def findAll(offset: Int, limit: Int): F[Seq[Connector]] =
     findAll(ConnectorQueries.select, offset, limit, ConnectorQueries.limitAndOffset)
 
