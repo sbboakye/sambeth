@@ -19,7 +19,7 @@ import org.typelevel.log4cats.Logger
 import java.time.OffsetDateTime
 import java.util.UUID
 
-class PipelinesRepository[F[_]: MonadCancelThrow: Logger](using
+class PipelinesRepository[F[_]: { MonadCancelThrow, Logger }](using
     xa: Transactor[F],
     core: Core[F, Pipeline]
 ) extends PipelineMetadataRepository[F]:
@@ -63,7 +63,7 @@ class PipelinesRepository[F[_]: MonadCancelThrow: Logger](using
   def delete(id: UUID): F[Option[Int]] = core.delete(PipelineQueries.delete(id))
 
 object PipelinesRepository:
-  def apply[F[_]: MonadCancelThrow: Logger](using
+  def apply[F[_]: { MonadCancelThrow, Logger }](using
       xa: Transactor[F],
       core: Core[F, Pipeline]
   ): Resource[F, PipelinesRepository[F]] =
