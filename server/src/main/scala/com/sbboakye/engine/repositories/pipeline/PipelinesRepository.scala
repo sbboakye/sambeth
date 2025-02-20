@@ -10,6 +10,7 @@ import com.sbboakye.engine.domain.{
   PipelineMetadataRepository,
   PipelineStatus
 }
+import com.sbboakye.engine.repositories.Repository
 import com.sbboakye.engine.repositories.core.Core
 import doobie.*
 import doobie.implicits.*
@@ -21,8 +22,10 @@ import java.util.UUID
 
 class PipelinesRepository[F[_]: { MonadCancelThrow, Logger }](using
     xa: Transactor[F],
-    core: Core[F, Pipeline]
-) extends PipelineMetadataRepository[F]:
+    helper: StagesHelper[F]
+) extends Core[F, Pipeline]
+    with Repository[F, Pipeline]
+    with PipelineMetadataRepository[F]:
 
   override def findMetadataById(id: PipelineId): F[Option[PipelineMetadata]] =
     (PipelineQueries.select ++ PipelineQueries.where(id = id))
@@ -30,14 +33,13 @@ class PipelinesRepository[F[_]: { MonadCancelThrow, Logger }](using
       .option
       .transact(xa)
 
-  def findAll(
+  override def findAll(
       offset: Int,
-      limit: Int,
-      helper: StagesHelper[F]
+      limit: Int
   ): F[Seq[Pipeline]] =
 
     for {
-      pipelines <- core.findAll(
+      pipelines <- findAll(
         PipelineQueries.select,
         offset,
         limit,
@@ -46,25 +48,25 @@ class PipelinesRepository[F[_]: { MonadCancelThrow, Logger }](using
       enrichPipelines <- helper.enrichPipelinesWithStages(pipelines)
     } yield enrichPipelines
 
-  def findById(id: UUID, helper: StagesHelper[F]): F[Option[Pipeline]] =
+  override def findById(id: UUID): F[Option[Pipeline]] =
     for {
-      pipelineOpt <- core.findByID(PipelineQueries.select, PipelineQueries.where(id = id))
+      pipelineOpt <- findByID(PipelineQueries.select, PipelineQueries.where(id = id))
       enrichPipeline <- pipelineOpt match {
         case Some(pipeline) => helper.enrichPipelinesWithStages(Seq(pipeline)).map(_.headOption)
         case None           => MonadCancelThrow[F].pure(None)
       }
     } yield enrichPipeline
 
-  def create(pipeline: Pipeline): F[UUID] = core.create(PipelineQueries.insert(pipeline))
+  override def create(pipeline: Pipeline): F[UUID] = create(PipelineQueries.insert(pipeline))
 
-  def update(id: UUID, pipeline: Pipeline): F[Option[Int]] =
-    core.update(PipelineQueries.update(id, pipeline))
+  override def update(id: UUID, pipeline: Pipeline): F[Option[Int]] =
+    update(PipelineQueries.update(id, pipeline))
 
-  def delete(id: UUID): F[Option[Int]] = core.delete(PipelineQueries.delete(id))
+  override def delete(id: UUID): F[Option[Int]] = delete(PipelineQueries.delete(id))
 
 object PipelinesRepository:
   def apply[F[_]: { MonadCancelThrow, Logger }](using
-      xa: Transactor[F],
-      core: Core[F, Pipeline]
+      Transactor[F],
+      StagesHelper[F]
   ): Resource[F, PipelinesRepository[F]] =
     Resource.eval(MonadCancelThrow[F].pure(new PipelinesRepository[F]))

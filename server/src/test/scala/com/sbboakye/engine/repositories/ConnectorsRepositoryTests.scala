@@ -7,7 +7,6 @@ import cats.effect.testing.scalatest.AsyncIOSpec
 import com.sbboakye.engine.domain.Connector
 import com.sbboakye.engine.fixtures.CoreFixture
 import com.sbboakye.engine.repositories.connector.ConnectorsRepository
-import com.sbboakye.engine.contexts.RepositoryContext.NoHelper
 import doobie.*
 import org.scalatest.Assertion
 import org.scalatest.freespec.AsyncFreeSpec
@@ -30,13 +29,13 @@ class ConnectorsRepositoryTests
   "ConnectorsRepository" - {
     "findAll" - {
       "should return an empty list when no connectors exist" in {
-        withDependencies[ConnectorsRepository, NoHelper, Assertion] { (repo, _, _) =>
+        withDependencies[ConnectorsRepository, Assertion] { (repo, _) =>
           repo.findAll(0, 10).asserting(_ shouldBe empty)
         }
       }
 
       "should return a list of connectors when connectors exist" in {
-        withDependencies[ConnectorsRepository, NoHelper, Assertion] { (repo, _, xa) =>
+        withDependencies[ConnectorsRepository, Assertion] { (repo, xa) =>
           given Transactor[IO] = xa
           val result = for {
             -           <- executeSqlScript(additionSQLScript1)
@@ -52,14 +51,14 @@ class ConnectorsRepositoryTests
 
     "findById" - {
       "should return None if the connector does not exist" in {
-        withDependencies[ConnectorsRepository, NoHelper, Assertion] { (repo, _, _) =>
+        withDependencies[ConnectorsRepository, Assertion] { (repo, _) =>
           val result = repo.findById(nonExistentId)
           result.asserting(_ shouldBe None)
         }
       }
 
       "should return the correct connector if the connector exists" in {
-        withDependencies[ConnectorsRepository, NoHelper, Assertion] { (repo, _, xa) =>
+        withDependencies[ConnectorsRepository, Assertion] { (repo, xa) =>
           given Transactor[IO] = xa
           val result = for {
             -           <- executeSqlScript(additionSQLScript1)
@@ -76,7 +75,7 @@ class ConnectorsRepositoryTests
 
     "create" - {
       "should create a new connector and return its id" in {
-        withDependencies[ConnectorsRepository, NoHelper, Assertion] { (repo, _, xa) =>
+        withDependencies[ConnectorsRepository, Assertion] { (repo, xa) =>
           given Transactor[IO] = xa
           val result = for {
             -           <- executeSqlScript(additionSQLScript1)
@@ -90,7 +89,7 @@ class ConnectorsRepositoryTests
 
     "update" - {
       "should update an existing connector" in {
-        withDependencies[ConnectorsRepository, NoHelper, Assertion] { (repo, _, xa) =>
+        withDependencies[ConnectorsRepository, Assertion] { (repo, xa) =>
           given Transactor[IO] = xa
           val result = for {
             -  <- executeSqlScript(additionSQLScript1)
@@ -106,7 +105,7 @@ class ConnectorsRepositoryTests
       }
 
       "should return None if connector does not exist" in {
-        withDependencies[ConnectorsRepository, NoHelper, Assertion] { (repo, _, xa) =>
+        withDependencies[ConnectorsRepository, Assertion] { (repo, xa) =>
           given Transactor[IO] = xa
           val result = for {
             -           <- executeSqlScript(additionSQLScript1)
@@ -120,7 +119,7 @@ class ConnectorsRepositoryTests
 
     "delete" - {
       "should delete an existing connector" in {
-        withDependencies[ConnectorsRepository, NoHelper, Assertion] { (repo, _, xa) =>
+        withDependencies[ConnectorsRepository, Assertion] { (repo, xa) =>
           given Transactor[IO] = xa
           val result = for {
             -            <- executeSqlScript(additionSQLScript1)
@@ -133,7 +132,7 @@ class ConnectorsRepositoryTests
       }
 
       "should return None if connector does not exist" in {
-        withDependencies[ConnectorsRepository, NoHelper, Assertion] { (repo, _, _) =>
+        withDependencies[ConnectorsRepository, Assertion] { (repo, _) =>
           val result = repo.delete(nonExistentId)
           result.asserting(_ shouldBe None)
         }
@@ -142,7 +141,7 @@ class ConnectorsRepositoryTests
 
     "Edge Cases: Concurrent Transactions" - {
       "should handle concurrent inserts without data loss" in {
-        withDependencies[ConnectorsRepository, NoHelper, Assertion] { (repo, _, xa) =>
+        withDependencies[ConnectorsRepository, Assertion] { (repo, xa) =>
           given Transactor[IO] = xa
           val results = for {
             -                <- executeSqlScript(additionSQLScript1)
@@ -157,7 +156,7 @@ class ConnectorsRepositoryTests
       }
 
       "should handle concurrent updates correctly" in {
-        withDependencies[ConnectorsRepository, NoHelper, Assertion] { (repo, _, xa) =>
+        withDependencies[ConnectorsRepository, Assertion] { (repo, xa) =>
           given Transactor[IO] = xa
           val results = for {
             -           <- executeSqlScript(additionSQLScript1)
@@ -179,7 +178,7 @@ class ConnectorsRepositoryTests
 
     "Edge Cases: Large Dataset" - {
       "should handle large number of records in findAll" in {
-        withDependencies[ConnectorsRepository, NoHelper, Assertion] { (repo, _, xa) =>
+        withDependencies[ConnectorsRepository, Assertion] { (repo, xa) =>
           given Transactor[IO] = xa
           val results = for {
             - <- executeSqlScript(additionSQLScript1)

@@ -15,8 +15,8 @@ case class Connector(
     createdAt: OffsetDateTime,
     updatedAt: OffsetDateTime
 ) {
-  def getStage[F[_]](helper: ConnectorsHelper[F])(using
+  def getStage[F[_]](using
       repository: StagesRepository[F]
   ): F[Option[Stage]] =
-    repository.findById(stageId, helper)
+    repository.findById(stageId)
 }

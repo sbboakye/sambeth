@@ -27,13 +27,13 @@ class SchedulesRepositoryTests
   "SchedulesRepository" - {
     "findAll" - {
       "should return an empty list when no schedules exist" in {
-        withDependencies[SchedulesRepository, NoHelper, Assertion] { (repo, _, _) =>
+        withDependencies[SchedulesRepository, Assertion] { (repo, _) =>
           repo.findAll(0, 10).asserting(_ shouldBe empty)
         }
       }
 
       "should return a list of schedules when schedules exist" in {
-        withDependencies[SchedulesRepository, NoHelper, Assertion] { (repo, _, _) =>
+        withDependencies[SchedulesRepository, Assertion] { (repo, _) =>
           val result = for {
             _           <- repo.create(validSchedule)
             queryResult <- repo.findAll(0, 10)
@@ -45,14 +45,14 @@ class SchedulesRepositoryTests
 
     "findById" - {
       "should return None if the schedule does not exist" in {
-        withDependencies[SchedulesRepository, NoHelper, Assertion] { (repo, _, _) =>
+        withDependencies[SchedulesRepository, Assertion] { (repo, _) =>
           val result = repo.findById(nonExistentId)
           result.asserting(_ shouldBe None)
         }
       }
 
       "should return the correct schedule if the schedule exists" in {
-        withDependencies[SchedulesRepository, NoHelper, Assertion] { (repo, _, _) =>
+        withDependencies[SchedulesRepository, Assertion] { (repo, _) =>
           val result = for {
             uuid        <- repo.create(validSchedule)
             queryResult <- repo.findById(uuid)
@@ -66,7 +66,7 @@ class SchedulesRepositoryTests
 
     "create" - {
       "should create a new schedule and return its id" in {
-        withDependencies[SchedulesRepository, NoHelper, Assertion] { (repo, _, _) =>
+        withDependencies[SchedulesRepository, Assertion] { (repo, _) =>
           val result = repo.create(validSchedule)
           result.asserting(_ should not be null)
         }
@@ -75,7 +75,7 @@ class SchedulesRepositoryTests
 
     "update" - {
       "should update an existing schedule" in {
-        withDependencies[SchedulesRepository, NoHelper, Assertion] { (repo, _, _) =>
+        withDependencies[SchedulesRepository, Assertion] { (repo, _) =>
           val result = for {
             id <- repo.create(validSchedule)
             updatedScheduleObject <- validSchedule
@@ -88,7 +88,7 @@ class SchedulesRepositoryTests
       }
 
       "should return None if schedule does not exist" in {
-        withDependencies[SchedulesRepository, NoHelper, Assertion] { (repo, _, _) =>
+        withDependencies[SchedulesRepository, Assertion] { (repo, _) =>
           val result = repo.update(nonExistentId, validSchedule)
           result.asserting(_ shouldBe None)
         }
@@ -97,7 +97,7 @@ class SchedulesRepositoryTests
 
     "delete" - {
       "should delete an existing schedule" in {
-        withDependencies[SchedulesRepository, NoHelper, Assertion] { (repo, _, _) =>
+        withDependencies[SchedulesRepository, Assertion] { (repo, _) =>
           val result = for {
             id           <- repo.create(validSchedule)
             deleteResult <- repo.delete(id)
@@ -107,7 +107,7 @@ class SchedulesRepositoryTests
       }
 
       "should return None if schedule does not exist" in {
-        withDependencies[SchedulesRepository, NoHelper, Assertion] { (repo, _, _) =>
+        withDependencies[SchedulesRepository, Assertion] { (repo, _) =>
           val result = repo.delete(nonExistentId)
           result.asserting(_ shouldBe None)
         }
@@ -116,7 +116,7 @@ class SchedulesRepositoryTests
 
     "Transactional behaviour" - {
       "should rollback on failure" in {
-        withDependencies[SchedulesRepository, NoHelper, Assertion] { (repo, _, _) =>
+        withDependencies[SchedulesRepository, Assertion] { (repo, _) =>
           val transactionalResult = (for {
             _         <- repo.create(validSchedule)
             _         <- repo.create(invalidScheduleWithNullCronExpression)
@@ -129,7 +129,7 @@ class SchedulesRepositoryTests
 
     "Edge Cases: Empty or Null Data" - {
       "should fail when inserting a schedule with null cron expression" in {
-        withDependencies[SchedulesRepository, NoHelper, Assertion] { (repo, _, _) =>
+        withDependencies[SchedulesRepository, Assertion] { (repo, _) =>
           val result = repo.create(invalidScheduleWithNullCronExpression).attempt
           result.asserting(_.left.toSeq.exists {
             case _: Throwable => true
@@ -139,7 +139,7 @@ class SchedulesRepositoryTests
       }
 
       "should fail when inserting a schedule with null timezone" in {
-        withDependencies[SchedulesRepository, NoHelper, Assertion] { (repo, _, _) =>
+        withDependencies[SchedulesRepository, Assertion] { (repo, _) =>
           val result = repo.create(invalidScheduleWithNullTimezone).attempt
           result.asserting(_.left.toSeq.exists {
             case _: Throwable => true
@@ -149,7 +149,7 @@ class SchedulesRepositoryTests
       }
 
       "should fail when inserting a schedule with empty cron expression" in {
-        withDependencies[SchedulesRepository, NoHelper, Assertion] { (repo, _, _) =>
+        withDependencies[SchedulesRepository, Assertion] { (repo, _) =>
           val result = repo.create(invalidScheduleWithEmptyCronExpression).attempt
           result.asserting(_.left.toSeq.exists {
             case _: Throwable => true
@@ -159,7 +159,7 @@ class SchedulesRepositoryTests
       }
 
       "should fail when inserting a schedule with empty timezone" in {
-        withDependencies[SchedulesRepository, NoHelper, Assertion] { (repo, _, _) =>
+        withDependencies[SchedulesRepository, Assertion] { (repo, _) =>
           val result = repo.create(invalidScheduleWithEmptyTimezone).attempt
           result.asserting(_.left.toSeq.exists {
             case _: Throwable => true
@@ -171,7 +171,7 @@ class SchedulesRepositoryTests
 
     "Edge Cases: Concurrent Transactions" - {
       "should handle concurrent inserts without data loss" in {
-        withDependencies[SchedulesRepository, NoHelper, Assertion] { (repo, _, _) =>
+        withDependencies[SchedulesRepository, Assertion] { (repo, _) =>
           val results = for {
             randomSchedules <- List.fill(10)(validSchedule.copy(id = UUID.randomUUID())).pure[IO]
             inserts   <- randomSchedules.parTraverse(randomSchedule => repo.create(randomSchedule))
@@ -183,7 +183,7 @@ class SchedulesRepositoryTests
       }
 
       "should handle concurrent updates correctly" in {
-        withDependencies[SchedulesRepository, NoHelper, Assertion] { (repo, _, _) =>
+        withDependencies[SchedulesRepository, Assertion] { (repo, _) =>
           val results = for {
             scheduleId <- repo.create(validSchedule)
             schedules <- List
@@ -202,7 +202,7 @@ class SchedulesRepositoryTests
 
     "Edge Cases: Large Dataset" - {
       "should handle large number of records in findAll" in {
-        withDependencies[SchedulesRepository, NoHelper, Assertion] { (repo, _, _) =>
+        withDependencies[SchedulesRepository, Assertion] { (repo, _) =>
           val results = for {
             randomSchedules <- List
               .fill(1000)(validSchedule.copy(id = UUID.randomUUID()))

@@ -20,8 +20,8 @@ case class PipelineExecution(
 ) {
   def getPipeline[F[_]](using
       repository: PipelinesRepository[F]
-  )(using helper: StagesHelper[F]): F[Option[Pipeline]] =
-    repository.findById(pipelineId, helper)
+  )(using StagesHelper[F]): F[Option[Pipeline]] =
+    repository.findById(pipelineId)
 }
 
 object PipelineExecution:

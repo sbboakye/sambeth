@@ -59,12 +59,12 @@ trait CoreSpec:
       Fragment.const(sql.trim).update.run.transact(xa)
     }
 
-  def withDependencies[Repo[_[_]], H[_[_]], T](
-      test: (Repo[IO], H[IO], Transactor[IO]) => IO[T]
-  )(using setup: RepositorySetup[Repo, H, IO]): IO[T] = {
+  def withDependencies[Repo[_[_]], T](
+      test: (Repo[IO], Transactor[IO]) => IO[T]
+  )(using setup: RepositorySetup[Repo, IO]): IO[T] = {
     coreSpecTransactor.use { xa =>
-      setup.use(xa) { (repo, helper, xa) =>
-        test(repo, helper, xa)
+      setup.use(xa) { (repo, xa) =>
+        test(repo, xa)
       }
     }
   }

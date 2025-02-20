@@ -12,7 +12,7 @@ import org.typelevel.log4cats.Logger
 import java.util.UUID
 import scala.reflect.ClassTag
 
-trait Core[F[_]: MonadCancelThrow: Logger, Entity: Read: ClassTag]:
+trait Core[F[_]: { MonadCancelThrow, Logger }, Entity: { Read, ClassTag }]:
 
   private def entityName(using ct: ClassTag[Entity]): String =
     ct.runtimeClass.getSimpleName

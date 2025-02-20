@@ -18,13 +18,13 @@ case class PipelineExecutionLog(
     logLevel: LogLevel,
     createdAt: OffsetDateTime
 ) {
-  def getExecution[F[_]](helper: PipelineExecutionLogsHelper[F])(using
+  def getExecution[F[_]](using
       repository: PipelineExecutionsRepository[F]
   ): F[Option[PipelineExecution]] =
-    repository.findById(executionId, helper)
+    repository.findById(executionId)
 
-  def getStage[F[_]](helper: ConnectorsHelper[F])(using
+  def getStage[F[_]](using
       repository: StagesRepository[F]
   ): F[Option[Stage]] =
-    repository.findById(stageId, helper)
+    repository.findById(stageId)
 }
