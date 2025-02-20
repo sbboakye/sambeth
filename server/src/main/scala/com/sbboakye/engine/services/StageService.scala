@@ -3,7 +3,7 @@ package com.sbboakye.engine.services
 import cats.effect.{Concurrent, Resource}
 import com.sbboakye.engine.contexts.RepositorySetup
 import com.sbboakye.engine.domain.Stage
-import com.sbboakye.engine.repositories.stage.{ConnectorsHelper, StagesRepository}
+import com.sbboakye.engine.repositories.stage.StagesRepository
 import doobie.Transactor
 
 import java.util.UUID

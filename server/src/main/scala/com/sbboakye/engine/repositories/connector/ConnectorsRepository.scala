@@ -8,6 +8,7 @@ import com.sbboakye.engine.repositories.Repository
 import com.sbboakye.engine.repositories.core.Core
 import doobie.*
 import doobie.implicits.*
+import doobie.postgres.*
 import doobie.postgres.implicits.*
 import org.typelevel.log4cats.Logger
 

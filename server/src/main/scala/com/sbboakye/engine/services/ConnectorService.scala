@@ -1,7 +1,6 @@
 package com.sbboakye.engine.services
 
 import cats.effect.{Concurrent, Resource}
-import com.sbboakye.engine.contexts.RepositoryContext.NoHelper
 import com.sbboakye.engine.contexts.RepositorySetup
 import com.sbboakye.engine.domain.Connector
 import com.sbboakye.engine.repositories.connector.ConnectorsRepository

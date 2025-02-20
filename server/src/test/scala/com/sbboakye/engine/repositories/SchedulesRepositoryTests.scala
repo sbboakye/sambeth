@@ -9,7 +9,6 @@ import com.sbboakye.engine.fixtures.CoreFixture
 import com.sbboakye.engine.repositories.schedule.SchedulesRepository
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
-import com.sbboakye.engine.contexts.RepositoryContext.NoHelper
 import org.scalatest.Assertion
 
 import java.util.UUID

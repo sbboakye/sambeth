@@ -3,7 +3,6 @@ package com.sbboakye.engine.services
 import cats.effect.Concurrent
 import cats.effect.Resource
 import com.sbboakye.engine.contexts.RepositorySetup
-import com.sbboakye.engine.contexts.RepositoryContext.NoHelper
 import com.sbboakye.engine.domain.Schedule
 import com.sbboakye.engine.repositories.schedule.SchedulesRepository
 import doobie.Transactor

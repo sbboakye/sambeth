@@ -6,6 +6,7 @@ import com.sbboakye.engine.config.{AppConfig, Database}
 import pureconfig.ConfigSource
 import com.sbboakye.engine.config.syntax.*
 import com.sbboakye.engine.contexts.RepositoryContext
+import com.sbboakye.engine.repositories.connector.ConnectorsRepository
 import com.sbboakye.engine.routes.ScheduleRoutes
 import com.sbboakye.engine.services.ScheduleService
 import org.http4s.ember.server.EmberServerBuilder
@@ -17,6 +18,7 @@ object Application extends IOApp.Simple:
   given logger: Logger[IO]                     = Slf4jLogger.getLogger[IO]
   val repositoryContext: RepositoryContext[IO] = RepositoryContext[IO]
   import repositoryContext.schedulesRepositorySetup
+  import repositoryContext.connectorsRepositorySetup
 
   private val makeAPIServer: IO[Unit] =
     ConfigSource.default.loadF[IO, AppConfig].flatMap { case AppConfig(emberConfig, dbConfig) =>

@@ -7,7 +7,6 @@ import cats.effect.testing.scalatest.AsyncIOSpec
 import com.sbboakye.engine.domain.PipelineExecutionLog
 import com.sbboakye.engine.fixtures.CoreFixture
 import com.sbboakye.engine.repositories.executionLog.PipelineExecutionLogsRepository
-import com.sbboakye.engine.contexts.RepositoryContext.NoHelper
 import doobie.*
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers

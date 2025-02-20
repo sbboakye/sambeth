@@ -29,7 +29,7 @@ trait Core[F[_]: { MonadCancelThrow, Logger }, Entity: { Read, ClassTag }]:
   def findAll(select: Fragment, offset: Int, limit: Int, limitAndOffset: (Int, Int) => Fragment)(
       using xa: Transactor[F]
   ): F[Seq[Entity]] =
-    Logger[F].info(s"Fetching all ${entityName} with offset: ${offset}, limit: ${limit}") *>
+    Logger[F].info(s"Fetching all $entityName with offset: $offset, limit: $limit") *>
       runQuery(
         (select ++ limitAndOffset(offset, limit))
           .query[Entity]
@@ -37,7 +37,7 @@ trait Core[F[_]: { MonadCancelThrow, Logger }, Entity: { Read, ClassTag }]:
       )
 
   def findByID(select: Fragment, where: Fragment)(using xa: Transactor[F]): F[Option[Entity]] =
-    Logger[F].info(s"Fetching ${entityName}") *>
+    Logger[F].info(s"Fetching $entityName") *>
       runQuery(
         (select ++ where)
           .query[Entity]
@@ -45,7 +45,7 @@ trait Core[F[_]: { MonadCancelThrow, Logger }, Entity: { Read, ClassTag }]:
       )
 
   def create(insertQuery: Fragment)(using xa: Transactor[F]): F[UUID] =
-    Logger[F].info(s"Creating ${entityName}") *>
+    Logger[F].info(s"Creating $entityName") *>
       runQuery(
         insertQuery.update
           .withUniqueGeneratedKeys[UUID]("id")
@@ -54,9 +54,9 @@ trait Core[F[_]: { MonadCancelThrow, Logger }, Entity: { Read, ClassTag }]:
   def update(updateQuery: Fragment)(using
       xa: Transactor[F]
   ): F[Option[Int]] =
-    Logger[F].info(s"Updating ${entityName}") *>
+    Logger[F].info(s"Updating $entityName") *>
       runUpdate(updateQuery)
 
   def delete(deleteQuery: Fragment)(using xa: Transactor[F]): F[Option[Int]] =
-    Logger[F].info(s"Deleting ${entityName}") *>
+    Logger[F].info(s"Deleting $entityName") *>
       runUpdate(deleteQuery)

@@ -5,7 +5,6 @@ import cats.effect.*
 import cats.syntax.all.*
 import cats.effect.testing.scalatest.AsyncIOSpec
 import com.sbboakye.engine.domain.PipelineExecution
-import com.sbboakye.engine.contexts.RepositoryContext.NoHelper
 import com.sbboakye.engine.fixtures.CoreFixture
 import com.sbboakye.engine.repositories.execution.{
   PipelineExecutionLogsHelper,
