@@ -11,9 +11,6 @@ import com.sbboakye.engine.repositories.pipeline.{PipelinesRepository, StagesHel
 import com.sbboakye.engine.repositories.schedule.SchedulesRepository
 import com.sbboakye.engine.repositories.stage.{ConnectorsHelper, StagesRepository}
 import doobie.*
-import doobie.implicits.*
-import doobie.postgres.*
-import doobie.postgres.implicits.*
 import org.typelevel.log4cats.Logger
 
 class RepositoryContext[F[_]: { MonadCancelThrow, Logger }]:

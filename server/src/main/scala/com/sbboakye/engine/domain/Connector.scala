@@ -1,7 +1,7 @@
 package com.sbboakye.engine.domain
 
 import com.sbboakye.engine.domain.CustomTypes.{ConnectorConfiguration, ConnectorId, StageId}
-import com.sbboakye.engine.repositories.stage.{ConnectorsHelper, StagesRepository}
+import com.sbboakye.engine.repositories.stage.StagesRepository
 
 import java.time.OffsetDateTime
 
