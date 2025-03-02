@@ -9,6 +9,8 @@ import doobie.Read
 import doobie.generic.auto.*
 import doobie.postgres.*
 import doobie.postgres.implicits.*
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 
 import java.time.OffsetDateTime
 
@@ -67,3 +69,6 @@ object Pipeline:
           updatedAt
         )
     }
+
+  given Encoder[Pipeline] = deriveEncoder[Pipeline]
+  given Decoder[Pipeline] = deriveDecoder[Pipeline]

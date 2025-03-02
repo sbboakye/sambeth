@@ -5,6 +5,8 @@ import com.sbboakye.engine.repositories.pipeline.PipelinesRepository
 import doobie.Read
 import doobie.postgres.*
 import doobie.postgres.implicits.*
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 
 import java.time.OffsetDateTime
 
@@ -60,3 +62,6 @@ object Stage:
             updatedAt
           )
       }
+
+  given Encoder[Stage] = deriveEncoder[Stage]
+  given Decoder[Stage] = deriveDecoder[Stage]

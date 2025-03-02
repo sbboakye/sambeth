@@ -7,6 +7,8 @@ import com.sbboakye.engine.domain.CustomTypes.ScheduleId
 import com.cronutils.model.CronType
 import com.cronutils.model.definition.CronDefinitionBuilder
 import com.cronutils.parser.CronParser
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 
 import java.time.{OffsetDateTime, ZoneId}
 import java.util.UUID
@@ -20,6 +22,9 @@ case class Schedule(
 )
 
 object Schedule:
+  given Encoder[Schedule] = deriveEncoder[Schedule]
+  given Decoder[Schedule] = deriveDecoder[Schedule]
+
   private type ValidationResult[A] = ValidatedNec[DomainValidation, A]
 
   def validateCronExpression(cronExpression: String): ValidationResult[String] =

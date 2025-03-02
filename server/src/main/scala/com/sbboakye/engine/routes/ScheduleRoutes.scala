@@ -10,7 +10,6 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.circe.*
 import org.http4s.circe.CirceEntityEncoder.*
 import org.http4s.circe.CirceEntityDecoder.*
-import io.circe.generic.auto.*
 import org.http4s.server.Router
 
 class ScheduleRoutes[F[_]: Concurrent] private (scheduleService: ScheduleService[F]):
