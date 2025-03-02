@@ -7,8 +7,6 @@ import com.sbboakye.engine.domain.Schedule
 import com.sbboakye.engine.repositories.schedule.SchedulesRepository
 import doobie.Transactor
 
-import java.util.UUID
-
 class ScheduleService[F[_]: Concurrent] private (
     xa: Transactor[F]
 )(using RepositorySetup[SchedulesRepository, F])
