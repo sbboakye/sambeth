@@ -6,8 +6,6 @@ import com.sbboakye.engine.domain.Pipeline
 import com.sbboakye.engine.repositories.pipeline.PipelinesRepository
 import doobie.Transactor
 
-import java.util.UUID
-
 class PipelineService[F[_]: Concurrent] private (xa: Transactor[F])(using
     RepositorySetup[PipelinesRepository, F]
 ) extends CoreService[F, PipelinesRepository, Pipeline](xa)

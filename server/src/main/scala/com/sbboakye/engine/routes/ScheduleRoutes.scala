@@ -16,16 +16,16 @@ class ScheduleRoutes[F[_]: Concurrent] private (scheduleService: ScheduleService
   private val dsl: Http4sDsl[F] = new Http4sDsl[F] {}
   import dsl.*
 
-  private val prefix = "/"
-
   private val entity = "schedules"
 
-  private val listAPIRoute: HttpRoutes[F] = HttpRoutes.of[F] { case GET -> Root / entity =>
+  private val prefix = s"/$entity"
+
+  private val listAPIRoute: HttpRoutes[F] = HttpRoutes.of[F] { case GET -> Root =>
     scheduleService.findAll.flatMap(schedules => Ok(ApiResponse.Success(schedules)))
   }
 
   private val detailAPIRoute: HttpRoutes[F] = HttpRoutes.of[F] {
-    case GET -> Root / entity / UUIDVar(scheduleId) =>
+    case GET -> Root / UUIDVar(scheduleId) =>
       scheduleService
         .findById(scheduleId)
         .flatMap(
@@ -36,7 +36,7 @@ class ScheduleRoutes[F[_]: Concurrent] private (scheduleService: ScheduleService
   }
 
   private val createAPIRoute: HttpRoutes[F] = HttpRoutes.of[F] {
-    case req @ POST -> Root / entity / "create" =>
+    case req @ POST -> Root / "create" =>
       req.as[ScheduleCreate].flatMap { scheduleCreate =>
         Schedule.create(
           cronExpression = scheduleCreate.cronExpression,
@@ -55,7 +55,7 @@ class ScheduleRoutes[F[_]: Concurrent] private (scheduleService: ScheduleService
   }
 
   private val updateAPIRoute: HttpRoutes[F] = HttpRoutes.of[F] {
-    case req @ PUT -> Root / entity / "update" / UUIDVar(scheduleId) =>
+    case req @ PUT -> Root / "update" / UUIDVar(scheduleId) =>
       req.as[ScheduleCreate].flatMap { scheduleCreate =>
         Schedule.create(
           cronExpression = scheduleCreate.cronExpression,
@@ -77,7 +77,7 @@ class ScheduleRoutes[F[_]: Concurrent] private (scheduleService: ScheduleService
   }
 
   private val deleteAPIRoute: HttpRoutes[F] = HttpRoutes.of[F] {
-    case DELETE -> Root / entity / "delete" / UUIDVar(scheduleId) =>
+    case DELETE -> Root / "delete" / UUIDVar(scheduleId) =>
       scheduleService
         .delete(scheduleId)
         .flatMap(
@@ -94,5 +94,7 @@ class ScheduleRoutes[F[_]: Concurrent] private (scheduleService: ScheduleService
   )
 
 object ScheduleRoutes:
-  def apply[F[_]: Concurrent](scheduleService: ScheduleService[F]): ScheduleRoutes[F] =
-    new ScheduleRoutes[F](scheduleService)
+  def apply[F[_]](scheduleService: ScheduleService[F])(using
+      F: Concurrent[F]
+  ): Resource[F, ScheduleRoutes[F]] =
+    Resource.eval(F.pure(new ScheduleRoutes[F](scheduleService)))

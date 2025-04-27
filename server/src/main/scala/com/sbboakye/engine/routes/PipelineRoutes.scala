@@ -16,16 +16,16 @@ class PipelineRoutes[F[_]: Concurrent] private (pipelineService: PipelineService
   private val dsl: Http4sDsl[F] = new Http4sDsl[F] {}
   import dsl.*
 
-  private val prefix = "/"
-
   private val entity = "pipelines"
 
-  private val listAPIRoute: HttpRoutes[F] = HttpRoutes.of[F] { case GET -> Root / entity =>
+  private val prefix = s"/$entity"
+
+  private val listAPIRoute: HttpRoutes[F] = HttpRoutes.of[F] { case GET -> Root =>
     pipelineService.findAll.flatMap(pipelines => Ok(ApiResponse.Success(pipelines)))
   }
 
   private val detailAPIRoute: HttpRoutes[F] = HttpRoutes.of[F] {
-    case GET -> Root / entity / UUIDVar(pipelineId) =>
+    case GET -> Root / UUIDVar(pipelineId) =>
       pipelineService
         .findById(pipelineId)
         .flatMap(
@@ -36,7 +36,7 @@ class PipelineRoutes[F[_]: Concurrent] private (pipelineService: PipelineService
   }
 
   private val createAPIRoute: HttpRoutes[F] = HttpRoutes.of[F] {
-    case req @ POST -> Root / entity / "create" =>
+    case req @ POST -> Root / "create" =>
       req
         .as[Pipeline]
         .flatMap { pipeline =>
@@ -47,7 +47,7 @@ class PipelineRoutes[F[_]: Concurrent] private (pipelineService: PipelineService
   }
 
   private val updateAPIRoute: HttpRoutes[F] = HttpRoutes.of[F] {
-    case req @ PUT -> Root / entity / "update" / UUIDVar(pipelineId) =>
+    case req @ PUT -> Root / "update" / UUIDVar(pipelineId) =>
       req.as[Pipeline].flatMap { pipeline =>
         pipelineService.update(pipelineId, pipeline).flatMap { numberOfUpdates =>
           Ok(ApiResponse.Success(numberOfUpdates))
@@ -56,7 +56,7 @@ class PipelineRoutes[F[_]: Concurrent] private (pipelineService: PipelineService
   }
 
   private val deleteAPIRoute: HttpRoutes[F] = HttpRoutes.of[F] {
-    case DELETE -> Root / entity / "delete" / UUIDVar(pipelineId) =>
+    case DELETE -> Root / "delete" / UUIDVar(pipelineId) =>
       pipelineService
         .delete(pipelineId)
         .flatMap(
@@ -73,5 +73,7 @@ class PipelineRoutes[F[_]: Concurrent] private (pipelineService: PipelineService
   )
 
 object PipelineRoutes:
-  def apply[F[_]: Concurrent](pipelineService: PipelineService[F]): PipelineRoutes[F] =
-    new PipelineRoutes[F](pipelineService)
+  def apply[F[_]](pipelineService: PipelineService[F])(using
+      F: Concurrent[F]
+  ): Resource[F, PipelineRoutes[F]] =
+    Resource.eval(F.pure(new PipelineRoutes[F](pipelineService)))

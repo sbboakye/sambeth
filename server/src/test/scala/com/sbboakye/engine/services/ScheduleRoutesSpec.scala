@@ -40,7 +40,9 @@ class ScheduleRoutesSpec
           fieldsToCompare = relevantFields
         ) { xa =>
           ScheduleService[IO](xa).use { service =>
-            IO.pure(ScheduleRoutes[IO](service).routes)
+            ScheduleRoutes[IO](service).use { router =>
+              IO.pure(router.routes)
+            }
           }
         }.asserting(_ shouldBe true)
       }
@@ -70,8 +72,9 @@ class ScheduleRoutesSpec
           ScheduleService[IO](xa).use { service =>
             given Transactor[IO] = xa
             for {
-              - <- executeSqlScript(additionSQLScript)
-            } yield ScheduleRoutes[IO](service).routes
+              _      <- executeSqlScript(additionSQLScript)
+              routes <- ScheduleRoutes[IO](service).use(IO.pure)
+            } yield routes.routes
           }
         }.asserting(_ shouldBe true)
       }
@@ -89,8 +92,9 @@ class ScheduleRoutesSpec
           ScheduleService[IO](xa).use { service =>
             given Transactor[IO] = xa
             for {
-              _ <- executeSqlScript(additionSQLScript)
-            } yield ScheduleRoutes[IO](service).routes
+              _      <- executeSqlScript(additionSQLScript)
+              routes <- ScheduleRoutes[IO](service).use(IO.pure)
+            } yield routes.routes
           }
         }.asserting(_ shouldBe true)
       }
@@ -114,8 +118,9 @@ class ScheduleRoutesSpec
           ScheduleService[IO](xa).use { service =>
             given Transactor[IO] = xa
             for {
-              _ <- executeSqlScript(additionSQLScript)
-            } yield ScheduleRoutes[IO](service).routes
+              _      <- executeSqlScript(additionSQLScript)
+              routes <- ScheduleRoutes[IO](service).use(IO.pure)
+            } yield routes.routes
           }
         }.asserting(_ shouldBe true)
       }
@@ -138,8 +143,9 @@ class ScheduleRoutesSpec
             given Transactor[IO] = xa
 
             for {
-              _ <- executeSqlScript(additionSQLScript)
-            } yield ScheduleRoutes[IO](service).routes
+              _      <- executeSqlScript(additionSQLScript)
+              routes <- ScheduleRoutes[IO](service).use(IO.pure)
+            } yield routes.routes
           }
         }.asserting(_ shouldBe true)
       }
@@ -165,8 +171,9 @@ class ScheduleRoutesSpec
             .use { service =>
               given Transactor[IO] = xa
               for {
-                _ <- executeSqlScript(additionSQLScript)
-              } yield ScheduleRoutes[IO](service).routes
+                _      <- executeSqlScript(additionSQLScript)
+                routes <- ScheduleRoutes[IO](service).use(IO.pure)
+              } yield routes.routes
             }
         }.asserting(_ shouldBe true)
       }
@@ -192,8 +199,9 @@ class ScheduleRoutesSpec
               given Transactor[IO] = xa
 
               for {
-                _ <- executeSqlScript(additionSQLScript)
-              } yield ScheduleRoutes[IO](service).routes
+                _      <- executeSqlScript(additionSQLScript)
+                routes <- ScheduleRoutes[IO](service).use(IO.pure)
+              } yield routes.routes
             }
         }.asserting(_ shouldBe true)
       }
@@ -219,8 +227,9 @@ class ScheduleRoutesSpec
               given Transactor[IO] = xa
 
               for {
-                _ <- executeSqlScript(additionSQLScript)
-              } yield ScheduleRoutes[IO](service).routes
+                _      <- executeSqlScript(additionSQLScript)
+                routes <- ScheduleRoutes[IO](service).use(IO.pure)
+              } yield routes.routes
             }
         }.asserting(_ shouldBe true)
       }
@@ -246,8 +255,9 @@ class ScheduleRoutesSpec
               given Transactor[IO] = xa
 
               for {
-                _ <- executeSqlScript(additionSQLScript)
-              } yield ScheduleRoutes[IO](service).routes
+                _      <- executeSqlScript(additionSQLScript)
+                routes <- ScheduleRoutes[IO](service).use(IO.pure)
+              } yield routes.routes
             }
         }.asserting(_ shouldBe true)
       }
@@ -273,8 +283,9 @@ class ScheduleRoutesSpec
               given Transactor[IO] = xa
 
               for {
-                _ <- executeSqlScript(additionSQLScript)
-              } yield ScheduleRoutes[IO](service).routes
+                _      <- executeSqlScript(additionSQLScript)
+                routes <- ScheduleRoutes[IO](service).use(IO.pure)
+              } yield routes.routes
             }
         }.asserting(_ shouldBe true)
       }
@@ -296,8 +307,9 @@ class ScheduleRoutesSpec
               given Transactor[IO] = xa
 
               for {
-                _ <- executeSqlScript(additionSQLScript)
-              } yield ScheduleRoutes[IO](service).routes
+                _      <- executeSqlScript(additionSQLScript)
+                routes <- ScheduleRoutes[IO](service).use(IO.pure)
+              } yield routes.routes
             }
         }.asserting(_ shouldBe true)
       }
@@ -318,8 +330,9 @@ class ScheduleRoutesSpec
               given Transactor[IO] = xa
 
               for {
-                _ <- executeSqlScript(additionSQLScript)
-              } yield ScheduleRoutes[IO](service).routes
+                _      <- executeSqlScript(additionSQLScript)
+                routes <- ScheduleRoutes[IO](service).use(IO.pure)
+              } yield routes.routes
             }
         }.asserting(_ shouldBe true)
       }
